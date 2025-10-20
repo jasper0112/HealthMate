@@ -80,29 +80,7 @@ HealthMate is not only for medical situations—it is a lifelong health partner 
 | **Package Diagram** | Logical organization: Patient, CoreAgent, HealthData, Appointment, etc. |
 | **Deployment Diagram** | Maps backend services and LLM components on cloud infrastructure |
 
----
 
-## 👩‍💻 Team Roles
-| Role | Responsibilities |
-|------|------------------|
-| **Project Manager** | Coordination, milestone tracking, requirement validation |
-| **LLM Engineer** | Prompt design, LangChain orchestration, AI behavior logic |
-| **Frontend Developer** | UI design, multilingual interface, data visualization |
-| **Backend Developer** | Data storage, API integration, encryption |
-| **QA & Compliance** | Testing, validation, ethical & safety assurance |
-
----
-
-## 🤝 Collaboration & Tools
-- **Version Control:** GitHub  
-- **Task Management:** Jira (Scrum board, sprints, backlog)  
-- **Design Tools:** StarUML / Draw.io  
-- **Communication:** Slack / MS Teams  
-- **Documentation:** Google Drive  
-
-**Workflow:** Agile (Scrum) with 2-week sprints  
-- Daily stand-ups → Sprint reviews → Retrospectives  
-- Continuous integration and iteration on feedback  
 
 ---
 

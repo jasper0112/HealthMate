@@ -19,7 +19,7 @@ const defaultReq = (): HealthDataCreateRequest => ({
   steps: undefined
 });
 
-export default function DataRecordForm({ onSaved }: { onSaved: () => void }) {
+export default function DataRecordForm({ onSaved }: { onSaved?: () => void }) {
   const [m, setM] = useState<HealthDataCreateRequest>(defaultReq());
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export default function DataRecordForm({ onSaved }: { onSaved: () => void }) {
       await createHealthData(m);
       setMsg("Saved successfully.");
       setM(defaultReq());
-      onSaved();
+      onSaved && onSaved();
     } catch (err:any) {
       setMsg(err.message ?? "Save failed.");
     } finally {
@@ -62,7 +62,7 @@ export default function DataRecordForm({ onSaved }: { onSaved: () => void }) {
       const results = await syncAllConnectedDevices(USER_ID);
       const failed = results.filter(r=>!r.ok).length;
       setMsg(failed ? `Synced ${results.length - failed}/${results.length} devices.` : `Synced ${results.length} devices.`);
-      onSaved();
+      onSaved && onSaved();
     } catch (err:any) {
       setMsg(err.message ?? "Sync failed.");
     } finally {

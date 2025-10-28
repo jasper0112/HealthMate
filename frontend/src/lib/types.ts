@@ -42,3 +42,33 @@ export interface HealthAssessmentResponse {
   recommendations?: string[];
   kpis?: { name: string; value: string | number; traffic?: "green" | "yellow" | "red" }[];
 }
+
+// ==== Health Plan (AI) ====
+// Align with backend enum HealthPlan.PlanType { DAILY, WEEKLY, MONTHLY }
+export type HealthPlanType = "DAILY" | "WEEKLY" | "MONTHLY";
+
+export interface HealthPlanRequest {
+  userId: number;
+  type: HealthPlanType;
+  daysBack?: number;
+  startDate?: string;
+  endDate?: string;
+  healthGoals?: string[];
+}
+
+export interface HealthPlanResponse {
+  id: number;
+  userId: number;
+  username?: string;
+  planDate?: string;
+  startDate?: string;
+  endDate?: string;
+  type?: HealthPlanType;
+  dietPlan?: string;
+  workoutPlan?: string;
+  lifestylePlan?: string;
+  longTermGoals?: string[];
+  summary?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}

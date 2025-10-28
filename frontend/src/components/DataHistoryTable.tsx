@@ -19,7 +19,7 @@ function useClientPaging<T>(all: T[], pageSize: number) {
   return { page, setPage, totalPages, slice };
 }
 
-export default function DataHistoryTable() {
+export default function DataHistoryTable({ reloadSignal }: { reloadSignal?: number }) {
   const [all, setAll] = useState<HealthDataResponse[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -35,6 +35,7 @@ export default function DataHistoryTable() {
     }
   }
   useEffect(()=>{ load(); }, []);
+  useEffect(()=>{ if (reloadSignal != null) load(); }, [reloadSignal]);
 
   const { page, setPage, totalPages, slice } = useClientPaging(all, PAGE_SIZE);
   const weights = all.map(m => m.weight ?? 0).filter(x => x>0);

@@ -1,10 +1,13 @@
+"use client";
 // src/app/record/page.tsx
 import Breadcrumb from "@/components/Breadcrumb";
 import DataRecordForm from "@/components/DataRecordForm";
 import DataHistoryTable from "@/components/DataHistoryTable";
+import { useState } from "react";
 import Link from "next/link";
 
 export default function RecordPage() {
+  const [reloadSignal, setReloadSignal] = useState(0);
   return (
     <main>
       <Breadcrumb
@@ -28,12 +31,12 @@ export default function RecordPage() {
       </div>
 
       <div className="hm-card" style={{ marginBottom: "1rem" }}>
-              <DataRecordForm />
-            </div>
+        <DataRecordForm onSaved={() => setReloadSignal((n) => n + 1)} />
+      </div>
 
-            <div className="hm-card">
-              <DataHistoryTable />
-            </div>
+      <div className="hm-card">
+        <DataHistoryTable reloadSignal={reloadSignal} />
+      </div>
     </main>
   );
 }

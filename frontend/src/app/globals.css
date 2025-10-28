@@ -1,26 +1,57 @@
-@import "tailwindcss";
+/* Global base styles and design tokens (visual refresh) */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+:root{
+  --bg:#f2f5fb;
+  --bg-accent: radial-gradient(1200px 600px at -10% -30%, #dbeafe 0%, transparent 60%),
+               radial-gradient(1000px 500px at 120% -20%, #e9d5ff 0%, transparent 55%);
+  --card:#ffffff;
+  --text:#0f172a;
+  --muted:#6b7280;
+  --border:#e5e7eb;
+  --shadow: 0 18px 40px rgba(2, 6, 23, 0.08);
+
+  --primary:#2563eb;   /* blue-600 */
+  --primary-600:#1d4ed8;
+  --secondary:#111827; /* gray-900 */
+  --danger:#dc2626;    /* red-600 */
+  --danger-700:#b91c1c;
+  --success:#059669;   /* emerald-600 */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+*{ box-sizing:border-box; }
+html,body{
+  padding:0; margin:0;
+  background: var(--bg);
+  background-image: var(--bg-accent);
+  background-attachment: fixed;
+  color:var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  font-size: 16px;              /* bigger base font */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+a{ color:var(--primary); text-decoration:none; }
+a:hover{ text-decoration:underline; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.container{ max-width: 1120px; margin: 0 auto; padding: 0 18px; }
+
+.topbar{
+  position:sticky; top:0;
+  background:rgba(255,255,255,.9);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border-bottom:1px solid var(--border);
+  z-index:10;
 }
+.topbar .brand{ font-weight:800; letter-spacing:.2px; }
+.topbar .nav{ display:flex; gap:16px; }
+.topbar .container{ display:flex; align-items:center; justify-content:space-between; height:60px; }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.page{ padding: 26px 0 56px; }
+
+.footer{
+  margin-top: 48px; padding: 16px 0;
+  color: var(--muted);
+  border-top:1px solid var(--border);
+  background: rgba(255,255,255,.72);
 }

@@ -1,6 +1,6 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.HealthDeviceResponse;
+import com.example.backend.dto.response.HealthDeviceResponse;
 import com.example.backend.entity.HealthDevice;
 import com.example.backend.entity.User;
 import com.example.backend.repository.HealthDeviceRepository;

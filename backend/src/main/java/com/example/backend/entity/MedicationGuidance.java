@@ -25,28 +25,36 @@ public class MedicationGuidance {
     @Column(nullable = false, length = 500)
     private String symptoms;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String conditionDescription;
     
-    @Column(length = 3000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String otcMedications; // Recommended OTC meds with dosages
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String usageInstructions;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String precautions;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String sideEffects;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String recommendedPharmacies;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String priceComparison; // Price info for different pharmacies
     
-    @Column(length = 3000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String guidance;
     
     @Column(nullable = false)

@@ -1,14 +1,16 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.InsuranceRecommendationRequest;
-import com.example.backend.dto.InsuranceRecommendationResponse;
+import com.example.backend.dto.request.InsuranceRecommendationRequest;
+import com.example.backend.dto.response.InsuranceRecommendationResponse;
 import com.example.backend.entity.InsuranceRecommendation;
 import com.example.backend.entity.InsuranceProduct;
 import com.example.backend.entity.User;
 import com.example.backend.repository.InsuranceProductRepository;
 import com.example.backend.repository.InsuranceRecommendationRepository;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.service.ai.GeminiInsuranceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,12 @@ public class InsuranceRecommendationService {
     @Autowired
     private UserRepository userRepository;
     
+    @Autowired(required = false)
+    private GeminiInsuranceService geminiInsuranceService;
+    
+    @Value("${gemini.enabled:false}")
+    private Boolean geminiEnabled;
+    
     public InsuranceRecommendationResponse generateRecommendation(InsuranceRecommendationRequest request) {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -45,11 +53,6 @@ public class InsuranceRecommendationService {
             recommendation.setReason(InsuranceRecommendation.RecommendationReason.GENERAL_NEED);
         }
         
-        // Generate recommendation based on user profile
-        String profileAnalysis = "User: " + user.getFullName() + 
-                                ", Profile: " + request.getUserProfile();
-        recommendation.setUserProfileAnalysis(profileAnalysis);
-        
         // Get recommended products
         List<InsuranceProduct> products;
         if (request.getIsInternationalStudent()) {
@@ -60,15 +63,38 @@ public class InsuranceRecommendationService {
             products = productRepository.findByActiveTrue();
         }
         
+        // Try to use Gemini AI if enabled, otherwise fall back to basic recommendation
+        if (geminiEnabled && geminiInsuranceService != null) {
+            try {
+                geminiInsuranceService.enhanceRecommendationWithGemini(recommendation, user, request, products);
+            } catch (Exception e) {
+                System.err.println("Gemini insurance recommendation failed, falling back to basic recommendation: " + e.getMessage());
+                generateBasicRecommendation(recommendation, user, request, products);
+            }
+        } else {
+            // Fall back to basic recommendation
+            generateBasicRecommendation(recommendation, user, request, products);
+        }
+        
+        InsuranceRecommendation saved = recommendationRepository.save(recommendation);
+        return InsuranceRecommendationResponse.fromInsuranceRecommendation(saved);
+    }
+    
+    private void generateBasicRecommendation(InsuranceRecommendation recommendation, 
+                                             User user, 
+                                             InsuranceRecommendationRequest request,
+                                             List<InsuranceProduct> products) {
+        // Generate recommendation based on user profile
+        String profileAnalysis = "User: " + user.getFullName() + 
+                                ", Profile: " + request.getUserProfile();
+        recommendation.setUserProfileAnalysis(profileAnalysis);
+        
         // Build recommendation
         recommendation.setRecommendationSummary("Based on your profile, we recommend the following health insurance options.");
         recommendation.setDetailedRecommendation(generateDetailedRecommendation(products, request));
         recommendation.setRecommendedProducts(formatProducts(products));
         recommendation.setBenefits(generateBenefits(products));
         recommendation.setConsiderations(generateConsiderations(request));
-        
-        InsuranceRecommendation saved = recommendationRepository.save(recommendation);
-        return InsuranceRecommendationResponse.fromInsuranceRecommendation(saved);
     }
     
     private String generateDetailedRecommendation(List<InsuranceProduct> products, InsuranceRecommendationRequest request) {

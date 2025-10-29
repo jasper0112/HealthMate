@@ -36,59 +36,76 @@ public class HealthPlan {
     private PlanType type = PlanType.WEEKLY;
     
     // Diet Plan Section
-    @Column(length = 3000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String dietOverview;
     
-    @Column(length = 3000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String dailyMealPlan;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String nutritionGoals;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String foodRecommendations;
     
     // Exercise Plan Section
-    @Column(length = 3000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String exerciseOverview;
     
-    @Column(length = 3000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String weeklyWorkoutPlan;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String fitnessGoals;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String exerciseRecommendations;
     
     // Lifestyle Plan Section
-    @Column(length = 3000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String lifestyleOverview;
     
-    @Column(length = 3000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String dailyRoutine;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String sleepRecommendations;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String stressManagementTips;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String hydrationGoals;
     
     // Long-term Goals
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String longTermGoals;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String progressTrackingTips;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String motivationalNotes;
     
     // Overall Plan Summary
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String planSummary;
     
     @Column(nullable = false)

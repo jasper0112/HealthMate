@@ -1,0 +1,364 @@
+package com.example.backend.service.ai;
+
+import com.example.backend.config.GeminiConfig;
+import com.example.backend.entity.MedicationGuidance;
+import com.example.backend.entity.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class GeminiMedicationService {
+    
+    @Value("${gemini.enabled:false}")
+    private Boolean geminiEnabled;
+    
+    @Autowired(required = false)
+    private WebClient geminiWebClient;
+    
+    @Autowired(required = false)
+    private GeminiConfig geminiConfig;
+    
+    @Value("${gemini.model:gemini-2.5-pro}")
+    private String model;
+    
+    @Value("${gemini.max-tokens:8000}")
+    private Integer maxTokens;
+    
+    @Value("${gemini.temperature:0.7}")
+    private Double temperature;
+    
+    /**
+     * Generate professional medication guidance using Gemini 2.5 Pro
+     */
+    public MedicationGuidance generateGeminiMedicationGuidance(User user, String symptoms) {
+        
+        // Throw exception if Gemini is not enabled or configured
+        if (!geminiEnabled || geminiWebClient == null || geminiConfig == null) {
+            throw new RuntimeException("Gemini is not enabled or configured. Please check your configuration.");
+        }
+        
+        // Create base guidance object
+        MedicationGuidance baseGuidance = new MedicationGuidance();
+        baseGuidance.setUser(user);
+        baseGuidance.setSymptoms(symptoms);
+        
+        // Generate professional guidance content using Gemini
+        try {
+            String prompt = buildGeminiPrompt(user, symptoms);
+            
+            // Build request body
+            Map<String, Object> requestBody = new HashMap<>();
+            Map<String, Object> contents = new HashMap<>();
+            contents.put("parts", List.of(Map.of("text", prompt)));
+            requestBody.put("contents", List.of(contents));
+            
+            Map<String, Object> generationConfig = new HashMap<>();
+            generationConfig.put("maxOutputTokens", maxTokens);
+            generationConfig.put("temperature", temperature);
+            requestBody.put("generationConfig", generationConfig);
+            
+            // Call Gemini API
+            String apiKey = geminiConfig.getApiKey();
+            String uri = String.format("/models/%s:generateContent?key=%s", model, apiKey);
+            
+            String response = geminiWebClient.post()
+                    .uri(uri)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            
+            // Debug: Print full API response
+            System.out.println("==========================================");
+            System.out.println("Gemini Medication API Full Response:");
+            System.out.println("==========================================");
+            System.out.println(response);
+            System.out.println("==========================================");
+            
+            // Parse response using Jackson
+            if (response != null) {
+                // Extract Gemini response text
+                String geminiResponse = extractResponseText(response);
+                
+                // Debug: Print extracted text
+                System.out.println("Extracted Gemini Medication Response Text:");
+                System.out.println(geminiResponse != null ? geminiResponse : "NULL (extraction failed)");
+                System.out.println("==========================================");
+                
+                if (geminiResponse != null && !geminiResponse.isEmpty()) {
+                    // Parse Gemini response and update guidance
+                    return parseGeminiResponse(baseGuidance, geminiResponse);
+                }
+            }
+            
+            // Throw exception if parsing fails
+            throw new RuntimeException("Failed to parse Gemini response");
+            
+        } catch (Exception e) {
+            // Throw exception if Gemini call fails
+            System.err.println("==========================================");
+            System.err.println("Gemini medication call failed!");
+            System.err.println("Error message: " + e.getMessage());
+            System.err.println("Error class: " + e.getClass().getName());
+            System.err.println("==========================================");
+            e.printStackTrace();
+            throw new RuntimeException("Gemini medication guidance failed: " + e.getMessage(), e);
+        }
+    }
+    
+    private String extractResponseText(String jsonResponse) {
+        System.out.println("----------------------------------------");
+        System.out.println("Attempting to extract text from medication response using Jackson...");
+        
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(jsonResponse);
+            
+            // Navigate: candidates[0].content.parts[0].text
+            JsonNode candidates = rootNode.path("candidates");
+            if (!candidates.isArray() || candidates.size() == 0) {
+                System.err.println("No candidates found or candidates is empty");
+                System.out.println("----------------------------------------");
+                return null;
+            }
+            
+            JsonNode firstCandidate = candidates.get(0);
+            JsonNode content = firstCandidate.path("content");
+            JsonNode parts = content.path("parts");
+            
+            if (!parts.isArray() || parts.size() == 0) {
+                System.err.println("No parts found or parts is empty");
+                System.out.println("----------------------------------------");
+                return null;
+            }
+            
+            JsonNode firstPart = parts.get(0);
+            JsonNode textNode = firstPart.path("text");
+            
+            if (!textNode.isTextual()) {
+                System.err.println("Text field is not a string");
+                System.out.println("----------------------------------------");
+                return null;
+            }
+            
+            String extractedText = textNode.asText();
+            System.out.println("Extracted raw text (length: " + extractedText.length() + ")");
+            System.out.println("First 200 chars: " + (extractedText.length() > 200 ? extractedText.substring(0, 200) + "..." : extractedText));
+            
+            // Remove markdown code block markers if present
+            if (extractedText.startsWith("```json\n")) {
+                extractedText = extractedText.substring(8); // Remove "```json\n"
+                System.out.println("Removed ```json\\n prefix");
+            } else if (extractedText.startsWith("```\n")) {
+                extractedText = extractedText.substring(4); // Remove "```\n"
+                System.out.println("Removed ```\\n prefix");
+            } else if (extractedText.startsWith("```json")) {
+                extractedText = extractedText.substring(7); // Remove "```json"
+                System.out.println("Removed ```json prefix");
+            } else if (extractedText.startsWith("```")) {
+                extractedText = extractedText.substring(3); // Remove "```"
+                System.out.println("Removed ``` prefix");
+            }
+            
+            // Remove trailing ``` if present
+            if (extractedText.endsWith("\n```")) {
+                extractedText = extractedText.substring(0, extractedText.length() - 4);
+                System.out.println("Removed \\n``` suffix");
+            } else if (extractedText.endsWith("```")) {
+                extractedText = extractedText.substring(0, extractedText.length() - 3);
+                System.out.println("Removed ``` suffix");
+            }
+            
+            // Trim whitespace
+            extractedText = extractedText.trim();
+            
+            // Try to extract JSON from text if it's not pure JSON
+            extractedText = extractJsonFromText(extractedText);
+            
+            System.out.println("Final extracted text (length: " + extractedText.length() + ")");
+            System.out.println("First 200 chars of final: " + (extractedText.length() > 200 ? extractedText.substring(0, 200) + "..." : extractedText));
+            System.out.println("----------------------------------------");
+            
+            return extractedText;
+            
+        } catch (Exception e) {
+            System.err.println("Failed to extract text: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("----------------------------------------");
+            return null;
+        }
+    }
+    
+    private String buildGeminiPrompt(User user, String symptoms) {
+        return String.format(
+            "You are a professional medication guidance AI assistant. Based on the following user information and symptoms, generate professional medication guidance.\n\n" +
+            "User Information:\n" +
+            "- Age: %s\n" +
+            "- Gender: %s\n" +
+            "- Symptoms: %s\n\n" +
+            "CRITICAL INSTRUCTIONS:\n" +
+            "You MUST respond with ONLY valid JSON format. Do NOT include any introductory text, explanations, or closing remarks.\n" +
+            "Your response MUST start directly with the opening brace { and end with the closing brace }.\n" +
+            "Do NOT add any text before or after the JSON object.\n" +
+            "The response must be parseable as valid JSON.\n\n" +
+            "Please provide the following content (return in JSON format):\n" +
+            "{\n" +
+            "  \"conditionDescription\": \"Brief description of the condition based on symptoms (100-200 words)\",\n" +
+            "  \"otcMedications\": \"Recommended over-the-counter medications with dosages (each medication on a new line with • mark)\",\n" +
+            "  \"usageInstructions\": \"Detailed usage instructions (how to take, frequency, timing, etc.)\",\n" +
+            "  \"precautions\": \"Important precautions and warnings (allergies, interactions, when to consult doctor, etc.)\",\n" +
+            "  \"sideEffects\": \"Common side effects to watch for\",\n" +
+            "  \"recommendedPharmacies\": \"Recommended pharmacies or where to purchase (optional)\",\n" +
+            "  \"priceComparison\": \"Price comparison information for different pharmacies (optional)\",\n" +
+            "  \"guidance\": \"Overall medication guidance and advice (200-300 words, professional and helpful)\"\n" +
+            "}\n\n" +
+            "Please reply in English, and the language should be professional, friendly, and easy to understand. " +
+            "Important: This is only for general guidance. Always remind users to consult healthcare professionals for serious symptoms.",
+            user.getAge() != null ? user.getAge().toString() : "Not specified",
+            user.getGender() != null ? user.getGender().toString() : "Not specified",
+            symptoms
+        );
+    }
+    
+    private MedicationGuidance parseGeminiResponse(MedicationGuidance baseGuidance, String geminiResponse) {
+        try {
+            // First, try to extract JSON if it's embedded in text
+            String jsonText = extractJsonFromText(geminiResponse);
+            
+            // Validate that it looks like JSON
+            String trimmedJson = jsonText.trim();
+            if (!trimmedJson.startsWith("{") || !trimmedJson.endsWith("}")) {
+                System.err.println("Response does not appear to be valid JSON (doesn't start with { or end with }). Falling back to default.");
+                System.err.println("First 100 chars: " + (trimmedJson.length() > 100 ? trimmedJson.substring(0, 100) : trimmedJson));
+                return baseGuidance;
+            }
+            
+            // Use Jackson to parse JSON (handles both strings and arrays)
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode jsonNode = mapper.readTree(jsonText);
+            
+            // Extract conditionDescription
+            String conditionDescription = extractJsonFieldFromNode(jsonNode, "conditionDescription");
+            baseGuidance.setConditionDescription(conditionDescription != null ? conditionDescription : "Condition analysis based on symptoms");
+            
+            // Extract otcMedications
+            String otcMedications = extractJsonFieldFromNode(jsonNode, "otcMedications");
+            baseGuidance.setOtcMedications(otcMedications != null ? otcMedications : "Please consult with a pharmacist for appropriate over-the-counter medications.");
+            
+            // Extract usageInstructions
+            String usageInstructions = extractJsonFieldFromNode(jsonNode, "usageInstructions");
+            baseGuidance.setUsageInstructions(usageInstructions != null ? usageInstructions : "Follow package instructions carefully.");
+            
+            // Extract precautions
+            String precautions = extractJsonFieldFromNode(jsonNode, "precautions");
+            baseGuidance.setPrecautions(precautions != null ? precautions : "Consult healthcare professional if symptoms persist.");
+            
+            // Extract sideEffects
+            String sideEffects = extractJsonFieldFromNode(jsonNode, "sideEffects");
+            baseGuidance.setSideEffects(sideEffects != null ? sideEffects : "Monitor for any adverse reactions.");
+            
+            // Extract recommendedPharmacies (optional)
+            String recommendedPharmacies = extractJsonFieldFromNode(jsonNode, "recommendedPharmacies");
+            if (recommendedPharmacies != null && !recommendedPharmacies.isEmpty()) {
+                baseGuidance.setRecommendedPharmacies(recommendedPharmacies);
+            }
+            
+            // Extract priceComparison (optional)
+            String priceComparison = extractJsonFieldFromNode(jsonNode, "priceComparison");
+            if (priceComparison != null && !priceComparison.isEmpty()) {
+                baseGuidance.setPriceComparison(priceComparison);
+            }
+            
+            // Extract guidance
+            String guidance = extractJsonFieldFromNode(jsonNode, "guidance");
+            baseGuidance.setGuidance(guidance != null ? guidance : "Consider consulting with a healthcare professional for proper diagnosis and treatment.");
+            
+        } catch (Exception e) {
+            System.err.println("Failed to parse Gemini medication response: " + e.getMessage());
+            e.printStackTrace();
+            // Set default values
+            baseGuidance.setConditionDescription("Condition analysis based on symptoms");
+            baseGuidance.setOtcMedications("Please consult with a pharmacist for appropriate over-the-counter medications.");
+            baseGuidance.setUsageInstructions("Follow package instructions carefully.");
+            baseGuidance.setPrecautions("Consult healthcare professional if symptoms persist.");
+            baseGuidance.setSideEffects("Monitor for any adverse reactions.");
+            baseGuidance.setGuidance("Consider consulting with a healthcare professional for proper diagnosis and treatment.");
+        }
+        
+        return baseGuidance;
+    }
+    
+    /**
+     * Extract JSON object from text that might contain additional text before or after JSON
+     */
+    private String extractJsonFromText(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+        
+        // If it already looks like pure JSON (starts and ends with braces), return as is
+        String trimmed = text.trim();
+        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+            return trimmed;
+        }
+        
+        // Try to find JSON object in the text
+        int firstBrace = text.indexOf('{');
+        if (firstBrace == -1) {
+            System.err.println("No opening brace { found in response. Returning original text.");
+            return text;
+        }
+        
+        // Find matching closing brace by counting braces
+        int braceCount = 0;
+        int lastBrace = -1;
+        for (int i = firstBrace; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '{') {
+                braceCount++;
+            } else if (c == '}') {
+                braceCount--;
+                if (braceCount == 0) {
+                    lastBrace = i;
+                    break;
+                }
+            }
+        }
+        
+        if (lastBrace > firstBrace) {
+            String jsonPart = text.substring(firstBrace, lastBrace + 1);
+            System.out.println("Extracted JSON from text (position " + firstBrace + " to " + lastBrace + ")");
+            return jsonPart.trim();
+        }
+        
+        System.err.println("Could not find matching closing brace. Returning original text.");
+        return text;
+    }
+    
+    private String extractJsonFieldFromNode(JsonNode jsonNode, String fieldName) {
+        JsonNode fieldNode = jsonNode.path(fieldName);
+        if (fieldNode.isTextual()) {
+            return fieldNode.asText();
+        } else if (fieldNode.isArray()) {
+            // Convert array to multi-line string
+            StringBuilder sb = new StringBuilder();
+            for (JsonNode item : fieldNode) {
+                if (item.isTextual()) {
+                    sb.append(item.asText()).append("\n");
+                }
+            }
+            return sb.toString().trim();
+        }
+        return null;
+    }
+}
+

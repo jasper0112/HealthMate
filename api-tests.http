@@ -1,0 +1,756 @@
+### HealthMate Backend API Test File
+### 
+### Usage:
+###   - IntelliJ IDEA: Click the ▶️ button above the request to run
+###   - VS Code: Install "REST Client" plugin, then click "Send Request"
+### 
+### Make sure the backend application is running on http://localhost:8080
+
+@baseUrl = http://localhost:8080/api
+@contentType = application/json
+
+#################################################
+# 1. Database Connection Test
+#################################################
+
+### Test database connection
+GET {{baseUrl}}/test/database
+Accept: application/json
+
+#################################################
+# 2. User Management API
+#################################################
+
+### Get all users
+GET {{baseUrl}}/users
+Accept: application/json
+
+### Get user statistics
+GET {{baseUrl}}/users/count
+Accept: application/json
+
+### Create new user
+### Note: 'age' field is automatically calculated from 'dateOfBirth' and will be included in the response
+POST {{baseUrl}}/users
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "password123",
+  "fullName": "Test User",
+  "gender": "MALE",
+  "dateOfBirth": "1995-01-15T00:00:00",
+  "phoneNumber": "1234567890",
+  "address": "123 Test Street",
+  "userInfo": "Software Engineer, enjoys outdoor activities",
+  "healthProfile": "No chronic conditions. Allergic to peanuts. Family history of diabetes.",
+  "healthGoal": "Maintain healthy weight, improve cardiovascular fitness",
+  "role": "USER"
+}
+
+### Get user ID=1
+GET {{baseUrl}}/users/1
+Accept: application/json
+
+### Find user by username
+GET {{baseUrl}}/users/username/testuser
+Accept: application/json
+
+### Find user by email
+GET {{baseUrl}}/users/email/test@example.com
+Accept: application/json
+
+### Update user information
+PUT {{baseUrl}}/users/1
+Content-Type: {{contentType}}
+
+{
+  "fullName": "Updated Test User",
+  "phoneNumber": "1234567890",
+  "userInfo": "Updated occupation: Senior Software Engineer",
+  "healthProfile": "Updated health profile: No allergies, family history of heart disease",
+  "healthGoal": "Updated goal: Lose 5kg weight, run a marathon"
+}
+
+### Get users by role (USER/ADMIN/DOCTOR)
+GET {{baseUrl}}/users/role/USER
+Accept: application/json
+
+### Get enabled users
+GET {{baseUrl}}/users/enabled
+Accept: application/json
+
+#################################################
+# 3. Health Data API
+#################################################
+
+### Get all health data
+GET {{baseUrl}}/health-data
+Accept: application/json
+
+### Create health data
+POST {{baseUrl}}/health-data
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "weight": 70.5,
+  "height": 1.75,
+  "heartRate": 75,
+  "bloodPressure": "120/80",
+  "sleepHours": 7.5,
+  "steps": 8000,
+  "moodLevel": "GOOD"
+}
+
+### Get health data ID=1
+GET {{baseUrl}}/health-data/7
+Accept: application/json
+
+### Get user's health data
+GET {{baseUrl}}/health-data/user/1
+Accept: application/json
+
+### Get health data statistics
+GET {{baseUrl}}/health-data/user/1/statistics
+Accept: application/json
+
+### Get recent health data (last 7 days)
+GET {{baseUrl}}/health-data/user/1/recent?days=7
+Accept: application/json
+
+### Update health data
+PUT {{baseUrl}}/health-data/1
+Content-Type: {{contentType}}
+
+{
+  "weight": 71.0,
+  "heartRate": 80,
+  "steps": 10000
+}
+
+### Delete health data
+DELETE {{baseUrl}}/health-data/1
+Accept: application/json
+
+#################################################
+# 4. Smart Triage API
+#################################################
+
+### Generate triage recommendation
+POST {{baseUrl}}/smart-triage
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "symptomsInfo": "Headache for three days, mild fever, fatigue",
+  "additionalContext": "No known allergies"
+}
+
+### Get triage details
+GET {{baseUrl}}/smart-triage/1
+Accept: application/json
+
+### Get user's triage history
+GET {{baseUrl}}/smart-triage/user/1
+Accept: application/json
+
+### Get latest triage
+GET {{baseUrl}}/smart-triage/user/1/latest
+Accept: application/json
+
+### Delete triage record
+DELETE {{baseUrl}}/smart-triage/1
+Accept: application/json
+
+#################################################
+# 5. Health Assessment API
+#################################################
+
+### Trigger AI health assessment
+POST {{baseUrl}}/health-assessments/trigger
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "type": "GENERAL",
+  "additionalInfo": "Recent fatigue, poor sleep quality"
+}
+
+### Get all assessments
+GET {{baseUrl}}/health-assessments
+Accept: application/json
+
+### Get assessment details
+GET {{baseUrl}}/health-assessments/1
+Accept: application/json
+
+### Get user's assessment history
+GET {{baseUrl}}/health-assessments/user/1
+Accept: application/json
+
+### Get latest assessment
+GET {{baseUrl}}/health-assessments/user/1/latest
+Accept: application/json
+
+### Get assessments by type (GENERAL/CARDIOVASCULAR/NUTRITION/FITNESS/MENTAL_HEALTH/COMPREHENSIVE)
+GET {{baseUrl}}/health-assessments/user/1/type/GENERAL
+Accept: application/json
+
+### Delete assessment record
+DELETE {{baseUrl}}/health-assessments/1
+Accept: application/json
+
+#################################################
+# 6. Health Plan API
+#################################################
+
+### Get all health plans
+GET {{baseUrl}}/health-plans
+Accept: application/json
+
+### Generate personalized health plan
+POST {{baseUrl}}/health-plans/generate
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "type": "WEEKLY",
+  "goals": "Lose 5kg weight, improve cardiovascular health"
+}
+
+### Get user's health plans
+GET {{baseUrl}}/health-plans/user/1
+Accept: application/json
+
+### Get health plan details
+GET {{baseUrl}}/health-plans/1
+Accept: application/json
+
+### Get latest plan
+GET {{baseUrl}}/health-plans/user/1/latest
+Accept: application/json
+
+### Get plans by type (DAILY/WEEKLY/MONTHLY)
+GET {{baseUrl}}/health-plans/user/1/type/WEEKLY
+Accept: application/json
+
+### Delete health plan
+DELETE {{baseUrl}}/health-plans/1
+Accept: application/json
+
+#################################################
+# 7. GP Appointment API
+#################################################
+
+### Get all appointments
+GET {{baseUrl}}/gp-appointments
+Accept: application/json
+
+### Create GP appointment
+POST {{baseUrl}}/gp-appointments
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "facilityId": 1,
+  "appointmentDate": "2024-12-15T10:00:00",
+  "reason": "Routine checkup"
+}
+
+### Get appointment details
+GET {{baseUrl}}/gp-appointments/1
+Accept: application/json
+
+### Get user's appointment list
+GET {{baseUrl}}/gp-appointments/user/1
+Accept: application/json
+
+### Get upcoming appointments
+GET {{baseUrl}}/gp-appointments/user/1/upcoming
+Accept: application/json
+
+### Cancel appointment
+PUT {{baseUrl}}/gp-appointments/1/cancel
+Accept: application/json
+
+### Reschedule appointment
+PUT {{baseUrl}}/gp-appointments/1/reschedule
+Content-Type: {{contentType}}
+
+{
+  "newAppointmentDate": "2024-12-20T14:00:00"
+}
+
+#################################################
+# 8. Facility Management API
+#################################################
+
+### Get all facilities
+GET {{baseUrl}}/facilities
+Accept: application/json
+
+### Get facility details
+GET {{baseUrl}}/facilities/1
+Accept: application/json
+
+### Query facilities by type (GP/HOSPITAL/CLINIC/PHARMACY/URGENT_CARE/EMERGENCY)
+GET {{baseUrl}}/facilities/type/GP
+Accept: application/json
+
+### Search facilities by name
+GET {{baseUrl}}/facilities/search?name=clinic
+Accept: application/json
+
+### Find nearby facilities (Sydney coordinates example)
+GET {{baseUrl}}/facilities/nearby?lat=-33.8688&lng=151.2093&distance=5
+Accept: application/json
+
+### Query by specialty
+GET {{baseUrl}}/facilities/specialty/cardiology
+Accept: application/json
+
+#################################################
+# 9. Medication Guidance API
+#################################################
+
+### Generate medication guidance (query parameter method)
+POST {{baseUrl}}/medication-guidance?userId=1&symptoms=headache
+Content-Type: {{contentType}}
+
+### Get guidance details
+GET {{baseUrl}}/medication-guidance/1
+Accept: application/json
+
+### Get user's guidance history
+GET {{baseUrl}}/medication-guidance/user/1
+Accept: application/json
+
+### Search by symptoms
+GET {{baseUrl}}/medication-guidance/search?symptoms=headache
+Accept: application/json
+
+### Delete guidance record
+DELETE {{baseUrl}}/medication-guidance/1
+Accept: application/json
+
+#################################################
+# 10. Diet Guidance API
+#################################################
+
+### Generate diet guidance (query parameter method)
+POST {{baseUrl}}/diet-guidance?userId=1&healthIssue=hypertension
+Content-Type: {{contentType}}
+
+### Get guidance details
+GET {{baseUrl}}/diet-guidance/1
+Accept: application/json
+
+### Get user's guidance history
+GET {{baseUrl}}/diet-guidance/user/1
+Accept: application/json
+
+### Search by health issue
+GET {{baseUrl}}/diet-guidance/search?healthIssue=hypertension
+Accept: application/json
+
+### Delete guidance record
+DELETE {{baseUrl}}/diet-guidance/1
+Accept: application/json
+
+#################################################
+# 11. Insurance Recommendation API
+#################################################
+
+### Get insurance product list
+GET {{baseUrl}}/insurance-products
+Accept: application/json
+
+### Get insurance product details
+GET {{baseUrl}}/insurance-products/1
+Accept: application/json
+
+### Generate insurance recommendation
+POST {{baseUrl}}/insurance-recommendations
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "reason": "INTERNATIONAL_STUDENT"
+}
+
+### Get recommendation details
+GET {{baseUrl}}/insurance-recommendations/1
+Accept: application/json
+
+### Get user's recommendation history
+GET {{baseUrl}}/insurance-recommendations/user/1
+Accept: application/json
+
+#################################################
+# 12. Health Device API
+#################################################
+
+### Get all devices
+GET {{baseUrl}}/health-devices
+Accept: application/json
+
+### Get device details
+GET {{baseUrl}}/health-devices/1
+Accept: application/json
+
+### Get user's devices
+GET {{baseUrl}}/health-devices/user/1
+Accept: application/json
+
+### Register new device
+POST {{baseUrl}}/health-devices
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "deviceName": "Fitbit Charge 5",
+  "deviceType": "FITNESS_TRACKER",
+  "brand": "Fitbit",
+  "model": "Charge 5",
+  "serialNumber": "FB123456"
+}
+
+#################################################
+# 13. Reward System API
+#################################################
+
+### Get user reward information
+GET {{baseUrl}}/rewards/user/1
+Accept: application/json
+
+### Daily check-in
+POST {{baseUrl}}/rewards/1/check-in
+Accept: application/json
+
+### Record health data entry reward
+POST {{baseUrl}}/rewards/1/health-data-entry
+Accept: application/json
+
+### Record assessment completion reward
+POST {{baseUrl}}/rewards/1/assessment-completion
+Accept: application/json
+
+### Record plan completion reward
+POST {{baseUrl}}/rewards/1/plan-completion
+Accept: application/json
+
+### Get user statistics
+GET {{baseUrl}}/rewards/user/1/stats
+Accept: application/json
+
+#################################################
+# 14. AI Components Comprehensive Test Module
+#################################################
+### 
+### This module tests all AI-powered features using Gemini:
+### - Health Assessment (GeminiAssessmentService)
+### - Smart Triage (GeminiTriageService)
+### - Health Plan (GeminiPlanService)
+### - Medication Guidance (GeminiMedicationService)
+### - Diet Guidance (GeminiDietService)
+### - Insurance Recommendation (GeminiInsuranceService)
+###
+### Prerequisites:
+### - Ensure gemini.enabled=true in application.properties
+### - Ensure valid Gemini API key is configured
+### - Make sure user and health data exist before testing AI features
+
+#################################################
+# AI Test Flow Example
+#################################################
+
+### Complete test flow:
+### 1. Create user -> 2. Create health data -> 3. Generate triage -> 4. Create assessment -> 5. View rewards
+
+### Step 1: Create test user
+### Note: 'age' will be automatically calculated from 'dateOfBirth' and returned in the response
+POST {{baseUrl}}/users
+Content-Type: {{contentType}}
+
+{
+  "username": "demo_user",
+  "email": "demo@example.com",
+  "password": "demo123456",
+  "fullName": "Demo User",
+  "gender": "MALE",
+  "dateOfBirth": "1990-05-20T00:00:00",
+  "phoneNumber": "0412345678",
+  "address": "456 Demo Avenue, Sydney",
+  "userInfo": "IT Professional, fitness enthusiast",
+  "healthProfile": "Generally healthy, no known allergies, family history of hypertension",
+  "healthGoal": "Increase daily step count to 10,000, improve sleep quality to 8 hours",
+  "role": "USER"
+}
+
+### Verify created user (check response includes 'age' field calculated from dateOfBirth)
+GET {{baseUrl}}/users/username/demo_user
+Accept: application/json
+
+### Step 2: Create health data
+POST {{baseUrl}}/health-data
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "weight": 70.5,
+  "height": 1.75,
+  "heartRate": 72,
+  "bloodPressure": "118/78",
+  "sleepHours": 7.5,
+  "steps": 8500,
+  "moodLevel": "GOOD"
+}
+
+### Step 3: Generate smart triage
+POST {{baseUrl}}/smart-triage
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "symptomsInfo": "Mild headache, lasting 2 days",
+  "additionalContext": "No other symptoms"
+}
+
+### Step 4: Trigger health assessment
+POST {{baseUrl}}/health-assessments/trigger
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "type": "GENERAL",
+  "additionalInfo": "Overall health status assessment"
+}
+
+### Step 5: View reward information
+GET {{baseUrl}}/rewards/user/1
+Accept: application/json
+
+#################################################
+# 15. Complete AI Components Test Suite
+#################################################
+###
+### Comprehensive test for all AI features
+### Run tests in order: Setup -> Test each AI component -> Verify results
+
+### ============================================
+### Setup Phase: Prepare test data
+### ============================================
+
+### AI Test - Step 1: Create test user for AI testing
+### Note: This user will be used for all AI component tests
+POST {{baseUrl}}/users
+Content-Type: {{contentType}}
+
+{
+  "username": "ai_test_user",
+  "email": "ai_test@example.com",
+  "password": "test123456",
+  "fullName": "AI Test User",
+  "gender": "MALE",
+  "dateOfBirth": "1985-06-15T00:00:00",
+  "phoneNumber": "0411111111",
+  "address": "AI Test Street, Sydney",
+  "userInfo": "Software developer, regular exercise, healthy lifestyle",
+  "healthProfile": "Generally healthy. Allergic to penicillin. Family history of diabetes and hypertension. Regular blood pressure monitoring.",
+  "healthGoal": "Maintain optimal weight (target BMI 22-24), improve cardiovascular fitness, reduce stress levels",
+  "role": "USER"
+}
+
+### AI Test - Step 2: Verify user creation (check age is calculated)
+GET {{baseUrl}}/users/username/ai_test_user
+Accept: application/json
+
+### AI Test - Step 3: Create health data records for AI analysis
+### Create multiple records to provide data for AI features
+POST {{baseUrl}}/health-data
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "weight": 75.5,
+  "height": 1.78,
+  "bmi": 23.8,
+  "systolicPressure": 125,
+  "diastolicPressure": 80,
+  "heartRate": 72,
+  "bodyTemperature": 36.5,
+  "bloodSugar": 95,
+  "sleepHours": 7,
+  "exerciseMinutes": 30,
+  "steps": 10000,
+  "waterIntake": 2000,
+  "moodLevel": "GOOD"
+}
+
+### Create second health data record
+POST {{baseUrl}}/health-data
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "weight": 75.2,
+  "height": 1.78,
+  "systolicPressure": 122,
+  "diastolicPressure": 78,
+  "heartRate": 70,
+  "sleepHours": 8,
+  "exerciseMinutes": 45,
+  "steps": 12000,
+  "waterIntake": 2200,
+  "moodLevel": "ENERGETIC"
+}
+
+### ============================================
+### AI Component Testing Phase
+### ============================================
+
+### AI Test - Component 1: Smart Triage (GeminiTriageService)
+### Test intelligent symptom analysis and triage recommendation
+POST {{baseUrl}}/smart-triage
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "symptomsInfo": "Persistent headache for 3 days, mild dizziness, occasional fatigue. Started after long work hours.",
+  "additionalContext": "No known allergies. Currently taking vitamins. Last checkup was 6 months ago."
+}
+
+### Verify Smart Triage result
+### Replace {triageId} with the ID returned from the previous request
+GET {{baseUrl}}/smart-triage/1
+Accept: application/json
+
+### AI Test - Component 2: Health Assessment (GeminiAssessmentService)
+### Test comprehensive AI health assessment based on user data
+POST {{baseUrl}}/health-assessments/trigger
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "type": "GENERAL",
+  "additionalInfo": "Comprehensive health assessment requested. User reports feeling generally well but concerned about stress levels and sleep quality."
+}
+
+### Verify Health Assessment result
+### Replace {assessmentId} with the ID returned from the previous request
+GET {{baseUrl}}/health-assessments/1
+Accept: application/json
+
+### AI Test - Component 3: Health Plan (GeminiPlanService)
+### Test personalized health plan generation
+POST {{baseUrl}}/health-plans/generate
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "type": "WEEKLY",
+  "goals": "Improve cardiovascular fitness, maintain healthy weight, enhance sleep quality, manage stress effectively"
+}
+
+### Verify Health Plan result
+### Replace {planId} with the ID returned from the previous request
+GET {{baseUrl}}/health-plans/1
+Accept: application/json
+
+### AI Test - Component 4: Medication Guidance (GeminiMedicationService)
+### Test AI-powered medication recommendations for symptoms
+POST {{baseUrl}}/medication-guidance?userId=1&symptoms=Headache, mild fever, body aches
+Content-Type: {{contentType}}
+
+### Verify Medication Guidance result
+### Replace {guidanceId} with the ID returned from the previous request
+GET {{baseUrl}}/medication-guidance/1
+Accept: application/json
+
+### AI Test - Component 5: Diet Guidance (GeminiDietService)
+### Test personalized dietary recommendations
+POST {{baseUrl}}/diet-guidance?userId=1&healthIssue=Hypertension and maintaining healthy weight
+Content-Type: {{contentType}}
+
+### Verify Diet Guidance result
+### Replace {guidanceId} with the ID returned from the previous request
+GET {{baseUrl}}/diet-guidance/1
+Accept: application/json
+
+### AI Test - Component 6: Insurance Recommendation (GeminiInsuranceService)
+### Test AI-powered health insurance recommendations
+### Note: Requires insurance products to be available in database
+POST {{baseUrl}}/insurance-recommendations
+Content-Type: {{contentType}}
+
+{
+  "userId": 1,
+  "reason": "GENERAL_NEED",
+  "userProfile": "Healthy individual, regular exercise, preventive care focused",
+  "specificNeeds": "Comprehensive coverage for GP visits, specialist consultations, and hospital stays",
+  "isInternationalStudent": false,
+  "isNewImmigrant": false
+}
+
+### Verify Insurance Recommendation result
+### Replace {recommendationId} with the ID returned from the previous request
+GET {{baseUrl}}/insurance-recommendations/1
+Accept: application/json
+
+### ============================================
+### Verification Phase: Review all AI-generated content
+### ============================================
+
+### Review all user's AI interactions
+GET {{baseUrl}}/smart-triage/user/1
+Accept: application/json
+
+GET {{baseUrl}}/health-assessments/user/1
+Accept: application/json
+
+GET {{baseUrl}}/health-plans/user/1
+Accept: application/json
+
+GET {{baseUrl}}/medication-guidance/user/1
+Accept: application/json
+
+GET {{baseUrl}}/diet-guidance/user/1
+Accept: application/json
+
+GET {{baseUrl}}/insurance-recommendations/user/1
+Accept: application/json
+
+### ============================================
+### Cleanup Phase: Remove test data
+### ============================================
+
+### AI Test - Cleanup: Delete ai_test_user
+### Note: Replace {userId} with the actual user ID from the creation response
+### This will also cascade delete related data (health data, assessments, plans, etc.)
+DELETE {{baseUrl}}/users/1
+Accept: application/json
+
+### Verify user deletion
+GET {{baseUrl}}/users/username/ai_test_user
+Accept: application/json
+
+### ============================================
+### Summary Notes:
+### ============================================
+### All AI components should:
+### 1. Return valid responses with appropriate content
+### 2. Store results in database correctly
+### 3. Handle errors gracefully (fallback to default content if Gemini fails)
+### 4. Parse JSON responses correctly (using extractJsonFromText method)
+### 5. Include personalized recommendations based on user profile and health data
+###
+### To verify Gemini is working:
+### - Check application logs for "Extracted JSON from text" messages
+### - Verify responses contain detailed, personalized content
+### - Confirm all fields are populated (not null)
+###
+### If Gemini is disabled (gemini.enabled=false):
+### - Services will fall back to basic/default content
+### - Responses will still be valid but less detailed

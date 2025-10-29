@@ -1,8 +1,8 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.UserCreateRequest;
-import com.example.backend.dto.UserResponse;
-import com.example.backend.dto.UserUpdateRequest;
+import com.example.backend.dto.request.UserCreateRequest;
+import com.example.backend.dto.response.UserResponse;
+import com.example.backend.dto.request.UserUpdateRequest;
 import com.example.backend.entity.User;
 import com.example.backend.service.UserService;
 import jakarta.validation.Valid;

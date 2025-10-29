@@ -1,6 +1,6 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.RewardSystemResponse;
+import com.example.backend.dto.response.RewardSystemResponse;
 import com.example.backend.service.RewardSystemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

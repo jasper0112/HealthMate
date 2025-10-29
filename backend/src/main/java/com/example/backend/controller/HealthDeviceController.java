@@ -1,6 +1,6 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.HealthDeviceResponse;
+import com.example.backend.dto.response.HealthDeviceResponse;
 import com.example.backend.entity.HealthDevice;
 import com.example.backend.service.HealthDeviceService;
 import org.springframework.beans.factory.annotation.Autowired;

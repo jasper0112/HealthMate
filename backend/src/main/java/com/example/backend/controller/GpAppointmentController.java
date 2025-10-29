@@ -1,7 +1,7 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.GpAppointmentRequest;
-import com.example.backend.dto.GpAppointmentResponse;
+import com.example.backend.dto.request.GpAppointmentRequest;
+import com.example.backend.dto.response.GpAppointmentResponse;
 import com.example.backend.service.GpAppointmentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

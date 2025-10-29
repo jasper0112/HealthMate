@@ -1,12 +1,13 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.HealthDataResponse;
-import com.example.backend.dto.HealthPlanRequest;
-import com.example.backend.dto.HealthPlanResponse;
+import com.example.backend.dto.response.HealthDataResponse;
+import com.example.backend.dto.request.HealthPlanRequest;
+import com.example.backend.dto.response.HealthPlanResponse;
 import com.example.backend.entity.HealthPlan;
 import com.example.backend.entity.User;
 import com.example.backend.repository.HealthPlanRepository;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.service.ai.GeminiPlanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

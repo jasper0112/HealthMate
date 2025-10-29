@@ -22,20 +22,24 @@ public class SmartTriage {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
     
-    @Column(nullable = false, length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String symptomsInfo;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TriagePriority priority = TriagePriority.MEDIUM;
     
-    @Column(length = 5000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String triageResult;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String recommendedAction;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String aiAnalysis;
     
     @Column(nullable = false)

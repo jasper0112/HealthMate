@@ -31,10 +31,12 @@ public class HealthAssessment {
     private AssessmentType type = AssessmentType.GENERAL;
     
     // AI Assessment Results
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String summary;
     
-    @Column(length = 5000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String detailedReport;
     
     @Enumerated(EnumType.STRING)
@@ -43,13 +45,16 @@ public class HealthAssessment {
     private BigDecimal overallScore; // 0-100
     
     // Key Metrics from Analysis
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String keyFindings;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String recommendations;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String aiInsights;
     
     @Column(nullable = false)

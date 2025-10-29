@@ -1,7 +1,7 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.GpAppointmentRequest;
-import com.example.backend.dto.GpAppointmentResponse;
+import com.example.backend.dto.request.GpAppointmentRequest;
+import com.example.backend.dto.response.GpAppointmentResponse;
 import com.example.backend.entity.Facility;
 import com.example.backend.entity.GpAppointment;
 import com.example.backend.entity.User;

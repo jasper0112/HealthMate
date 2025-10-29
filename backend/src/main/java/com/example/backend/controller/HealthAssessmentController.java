@@ -1,7 +1,7 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.HealthAssessmentRequest;
-import com.example.backend.dto.HealthAssessmentResponse;
+import com.example.backend.dto.request.HealthAssessmentRequest;
+import com.example.backend.dto.response.HealthAssessmentResponse;
 import com.example.backend.entity.HealthAssessment;
 import com.example.backend.service.HealthAssessmentService;
 import jakarta.validation.Valid;

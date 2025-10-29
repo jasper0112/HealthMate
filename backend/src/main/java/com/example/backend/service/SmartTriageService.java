@@ -1,11 +1,12 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.SmartTriageRequest;
-import com.example.backend.dto.SmartTriageResponse;
+import com.example.backend.dto.request.SmartTriageRequest;
+import com.example.backend.dto.response.SmartTriageResponse;
 import com.example.backend.entity.SmartTriage;
 import com.example.backend.entity.User;
 import com.example.backend.repository.SmartTriageRepository;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.service.ai.GeminiTriageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

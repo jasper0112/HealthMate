@@ -1,7 +1,7 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.InsuranceRecommendationRequest;
-import com.example.backend.dto.InsuranceRecommendationResponse;
+import com.example.backend.dto.request.InsuranceRecommendationRequest;
+import com.example.backend.dto.response.InsuranceRecommendationResponse;
 import com.example.backend.service.InsuranceRecommendationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

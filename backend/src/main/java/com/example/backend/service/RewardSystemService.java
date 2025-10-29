@@ -1,6 +1,6 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.RewardSystemResponse;
+import com.example.backend.dto.response.RewardSystemResponse;
 import com.example.backend.entity.RewardSystem;
 import com.example.backend.entity.User;
 import com.example.backend.repository.RewardSystemRepository;

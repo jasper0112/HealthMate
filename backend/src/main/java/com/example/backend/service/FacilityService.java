@@ -1,6 +1,6 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.FacilityResponse;
+import com.example.backend.dto.response.FacilityResponse;
 import com.example.backend.entity.Facility;
 import com.example.backend.repository.FacilityRepository;
 import org.springframework.beans.factory.annotation.Autowired;

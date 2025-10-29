@@ -1,11 +1,13 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.DietGuidanceResponse;
+import com.example.backend.dto.response.DietGuidanceResponse;
 import com.example.backend.entity.DietGuidance;
 import com.example.backend.entity.User;
 import com.example.backend.repository.DietGuidanceRepository;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.service.ai.GeminiDietService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,13 +25,30 @@ public class DietGuidanceService {
     @Autowired
     private UserRepository userRepository;
     
+    @Autowired(required = false)
+    private GeminiDietService geminiDietService;
+    
+    @Value("${gemini.enabled:false}")
+    private Boolean geminiEnabled;
+    
     public DietGuidanceResponse generateDietGuidance(Long userId, String healthIssue) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        // TODO: Integrate with Gemini AI for generating diet guidance
-        // For now, create a basic guidance
-        DietGuidance guidance = createBasicDietGuidance(user, healthIssue);
+        DietGuidance guidance;
+        
+        // Try to use Gemini AI if enabled, otherwise fall back to basic guidance
+        if (geminiEnabled && geminiDietService != null) {
+            try {
+                guidance = geminiDietService.generateGeminiDietGuidance(user, healthIssue);
+            } catch (Exception e) {
+                System.err.println("Gemini diet guidance failed, falling back to basic guidance: " + e.getMessage());
+                guidance = createBasicDietGuidance(user, healthIssue);
+            }
+        } else {
+            // Fall back to basic guidance
+            guidance = createBasicDietGuidance(user, healthIssue);
+        }
         
         DietGuidance savedGuidance = dietGuidanceRepository.save(guidance);
         return DietGuidanceResponse.fromDietGuidance(savedGuidance);
@@ -40,7 +59,7 @@ public class DietGuidanceService {
         guidance.setUser(user);
         guidance.setHealthIssue(healthIssue);
         
-        // Basic guidance - should be replaced with AI-generated content
+        // Basic guidance - fallback when Gemini is not available
         if (healthIssue.toLowerCase().contains("diabetes")) {
             guidance.setFoodRecommendations("• Whole grains (brown rice, quinoa, oatmeal)\n• Leafy greens and non-starchy vegetables\n• Lean proteins (chicken, fish, tofu)\n• Nuts and seeds\n• Berries and low-sugar fruits");
             guidance.setAvoidFoods("• Sugary drinks and candies\n• White bread and refined grains\n• Fried foods\n• Processed foods\n• High-sugar fruits (mango, banana in excess)");

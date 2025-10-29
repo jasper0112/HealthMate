@@ -25,28 +25,36 @@ public class DietGuidance {
     @Column(length = 500)
     private String healthIssue; // The specific issue user wants guidance for
     
-    @Column(length = 3000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String foodRecommendations; // Foods to eat
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String avoidFoods; // Foods to avoid
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String supplementRecommendations; // Nutritional supplements
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String mealSuggestions; // Meal plan suggestions
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String cookingTips; // How to prepare healthy meals
     
-    @Column(length = 3000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String guidance; // Overall dietary guidance
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String nutritionalBenefits; // Benefits of recommended foods
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String sampleMenu; // Sample daily menu
     
     @Column(nullable = false)

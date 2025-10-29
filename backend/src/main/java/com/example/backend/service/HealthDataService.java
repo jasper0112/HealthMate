@@ -1,9 +1,9 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.HealthDataCreateRequest;
-import com.example.backend.dto.HealthDataResponse;
-import com.example.backend.dto.HealthDataStatisticsResponse;
-import com.example.backend.dto.HealthDataUpdateRequest;
+import com.example.backend.dto.request.HealthDataCreateRequest;
+import com.example.backend.dto.response.HealthDataResponse;
+import com.example.backend.dto.response.HealthDataStatisticsResponse;
+import com.example.backend.dto.request.HealthDataUpdateRequest;
 import com.example.backend.entity.HealthData;
 import com.example.backend.entity.User;
 import com.example.backend.repository.HealthDataRepository;

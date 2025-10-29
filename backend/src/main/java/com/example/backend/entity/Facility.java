@@ -69,11 +69,11 @@ public class Facility {
     }
     
     public enum FacilityType {
-        GP,                // General Practitioner (全科医生)
-        HOSPITAL,          // Hospital (医院)
-        CLINIC,            // Clinic (诊所)
-        PHARMACY,          // Pharmacy (药房)
-        URGENT_CARE,       // Urgent Care (紧急护理)
-        EMERGENCY          // Emergency Department (急诊科)
+        GP,                // General Practitioner
+        HOSPITAL,          // Hospital
+        CLINIC,            // Clinic
+        PHARMACY,          // Pharmacy
+        URGENT_CARE,       // Urgent Care
+        EMERGENCY          // Emergency Department
     }
 }

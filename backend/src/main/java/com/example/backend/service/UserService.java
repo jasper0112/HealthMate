@@ -1,8 +1,8 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.UserCreateRequest;
-import com.example.backend.dto.UserResponse;
-import com.example.backend.dto.UserUpdateRequest;
+import com.example.backend.dto.request.UserCreateRequest;
+import com.example.backend.dto.response.UserResponse;
+import com.example.backend.dto.request.UserUpdateRequest;
 import com.example.backend.entity.User;
 import com.example.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +42,9 @@ public class UserService {
         user.setDateOfBirth(request.getDateOfBirth());
         user.setPhoneNumber(request.getPhoneNumber());
         user.setAddress(request.getAddress());
+        user.setUserInfo(request.getUserInfo());
+        user.setHealthProfile(request.getHealthProfile());
+        user.setHealthGoal(request.getHealthGoal());
         user.setRole(request.getRole());
         user.setEnabled(true);
         
@@ -114,6 +117,18 @@ public class UserService {
         
         if (request.getAddress() != null) {
             user.setAddress(request.getAddress());
+        }
+        
+        if (request.getUserInfo() != null) {
+            user.setUserInfo(request.getUserInfo());
+        }
+        
+        if (request.getHealthProfile() != null) {
+            user.setHealthProfile(request.getHealthProfile());
+        }
+        
+        if (request.getHealthGoal() != null) {
+            user.setHealthGoal(request.getHealthGoal());
         }
         
         if (request.getRole() != null) {

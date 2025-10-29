@@ -50,11 +50,25 @@ public class User implements UserDetails {
     
     private LocalDateTime dateOfBirth;
     
+    private Integer age;
+    
     @Size(max = 20, message = "Phone number cannot exceed 20 characters")
     private String phoneNumber;
     
     @Size(max = 200, message = "Address cannot exceed 200 characters")
     private String address;
+    
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String userInfo; // Additional user information (occupation, preferences, etc.)
+    
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String healthProfile; // Health profile (chronic conditions, allergies, family history, etc.)
+    
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String healthGoal; // Health goals (weight loss, muscle gain, cardiovascular improvement, etc.)
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -68,9 +82,32 @@ public class User implements UserDetails {
     
     private LocalDateTime updatedAt;
     
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+        calculateAge();
+    }
+    
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
+        calculateAge();
+    }
+    
+    /**
+     * Calculate age from dateOfBirth
+     */
+    private void calculateAge() {
+        if (this.dateOfBirth != null) {
+            LocalDateTime now = LocalDateTime.now();
+            this.age = now.getYear() - this.dateOfBirth.getYear();
+            // Adjust if birthday hasn't occurred this year
+            if (now.getMonthValue() < this.dateOfBirth.getMonthValue() ||
+                (now.getMonthValue() == this.dateOfBirth.getMonthValue() && 
+                 now.getDayOfMonth() < this.dateOfBirth.getDayOfMonth())) {
+                this.age--;
+            }
+        }
     }
     
     @Override

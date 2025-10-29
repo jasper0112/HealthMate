@@ -1,7 +1,7 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.SmartTriageRequest;
-import com.example.backend.dto.SmartTriageResponse;
+import com.example.backend.dto.request.SmartTriageRequest;
+import com.example.backend.dto.response.SmartTriageResponse;
 import com.example.backend.service.SmartTriageService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

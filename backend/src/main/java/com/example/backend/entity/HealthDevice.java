@@ -64,12 +64,12 @@ public class HealthDevice {
     }
     
     public enum DeviceType {
-        SMARTWATCH,         // 智能手表
-        FITNESS_TRACKER,    // 健身手环
-        BLOOD_PRESSURE_MONITOR, // 血压计
-        GLUCOSE_METER,      // 血糖仪
-        WEIGHT_SCALE,       // 智能秤
-        PULSE_OXIMETER,     // 血氧仪
-        OTHER               // 其他
+        SMARTWATCH,         // Smartwatch
+        FITNESS_TRACKER,    // Fitness tracker
+        BLOOD_PRESSURE_MONITOR, // Blood pressure monitor
+        GLUCOSE_METER,      // Glucose meter
+        WEIGHT_SCALE,       // Smart scale
+        PULSE_OXIMETER,     // Pulse oximeter
+        OTHER               // Other
     }
 }

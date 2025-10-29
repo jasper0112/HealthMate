@@ -1,6 +1,6 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.DietGuidanceResponse;
+import com.example.backend.dto.response.DietGuidanceResponse;
 import com.example.backend.service.DietGuidanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

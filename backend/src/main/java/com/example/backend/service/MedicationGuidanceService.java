@@ -1,11 +1,13 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.MedicationGuidanceResponse;
+import com.example.backend.dto.response.MedicationGuidanceResponse;
 import com.example.backend.entity.MedicationGuidance;
 import com.example.backend.entity.User;
 import com.example.backend.repository.MedicationGuidanceRepository;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.service.ai.GeminiMedicationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,13 +25,30 @@ public class MedicationGuidanceService {
     @Autowired
     private UserRepository userRepository;
     
+    @Autowired(required = false)
+    private GeminiMedicationService geminiMedicationService;
+    
+    @Value("${gemini.enabled:false}")
+    private Boolean geminiEnabled;
+    
     public MedicationGuidanceResponse generateMedicationGuidance(Long userId, String symptoms) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        // TODO: Integrate with Gemini AI for generating medication guidance
-        // For now, create a basic guidance
-        MedicationGuidance guidance = createBasicMedicationGuidance(user, symptoms);
+        MedicationGuidance guidance;
+        
+        // Try to use Gemini AI if enabled, otherwise fall back to basic guidance
+        if (geminiEnabled && geminiMedicationService != null) {
+            try {
+                guidance = geminiMedicationService.generateGeminiMedicationGuidance(user, symptoms);
+            } catch (Exception e) {
+                System.err.println("Gemini medication guidance failed, falling back to basic guidance: " + e.getMessage());
+                guidance = createBasicMedicationGuidance(user, symptoms);
+            }
+        } else {
+            // Fall back to basic guidance
+            guidance = createBasicMedicationGuidance(user, symptoms);
+        }
         
         MedicationGuidance savedGuidance = medicationGuidanceRepository.save(guidance);
         return MedicationGuidanceResponse.fromMedicationGuidance(savedGuidance);
@@ -40,7 +59,7 @@ public class MedicationGuidanceService {
         guidance.setUser(user);
         guidance.setSymptoms(symptoms);
         
-        // Basic guidance - should be replaced with AI-generated content
+        // Basic guidance - fallback when Gemini is not available
         if (symptoms.toLowerCase().contains("headache")) {
             guidance.setConditionDescription("Mild to moderate headache");
             guidance.setOtcMedications("• Ibuprofen 200-400mg every 4-6 hours\n• Paracetamol 500mg every 4-6 hours\n• Ensure adequate hydration");

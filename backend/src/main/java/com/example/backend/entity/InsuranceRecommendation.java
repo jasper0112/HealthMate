@@ -26,22 +26,28 @@ public class InsuranceRecommendation {
     @Column(nullable = false)
     private RecommendationReason reason;
     
-    @Column(length = 3000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String recommendationSummary;
     
-    @Column(length = 5000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String detailedRecommendation;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String recommendedProducts; // JSON or formatted string
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String userProfileAnalysis;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String benefits;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String considerations;
     
     @Column(nullable = false)
@@ -57,11 +63,11 @@ public class InsuranceRecommendation {
     }
     
     public enum RecommendationReason {
-        NEW_IMMIGRANT,           // 新移民
-        INTERNATIONAL_STUDENT,   // 国际学生
-        GENERAL_NEED,            // 一般需求
-        SPECIFIC_CONDITION,      // 特定健康问题
-        FAMILY_COVERAGE,         // 家庭保障
-        BUDGET_CONSCIOUS         // 预算考虑
+        NEW_IMMIGRANT,           // New immigrant
+        INTERNATIONAL_STUDENT,   // International student
+        GENERAL_NEED,            // General need
+        SPECIFIC_CONDITION,      // Specific health condition
+        FAMILY_COVERAGE,         // Family coverage
+        BUDGET_CONSCIOUS         // Budget conscious
     }
 }

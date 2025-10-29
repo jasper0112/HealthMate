@@ -30,20 +30,24 @@ public class InsuranceProduct {
     @Column(length = 100)
     private String email;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String insuranceInfo;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductType productType;
     
-    @Column(length = 3000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String coverageDetails;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String benefits;
     
-    @Column(length = 2000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String eligibilityCriteria;
     
     private BigDecimal monthlyPremium;
@@ -61,10 +65,10 @@ public class InsuranceProduct {
     private Boolean active = true;
     
     public enum ProductType {
-        PRIVATE_HEALTH,         // 私人健康保险
-        STUDENT_HEALTH,         // 学生健康保险
-        TRAVEL_HEALTH,          // 旅游健康保险
-        FAMILY_HEALTH,          // 家庭健康保险
-        VISITOR_HEALTH          // 访客健康保险
+        PRIVATE_HEALTH,         // Private health insurance
+        STUDENT_HEALTH,         // Student health insurance
+        TRAVEL_HEALTH,          // Travel health insurance
+        FAMILY_HEALTH,          // Family health insurance
+        VISITOR_HEALTH          // Visitor health insurance
     }
 }

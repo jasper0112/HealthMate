@@ -2,6 +2,8 @@ package com.example.backend.controller;
 
 import com.example.backend.dto.request.UserCreateRequest;
 import com.example.backend.dto.response.UserResponse;
+import com.example.backend.dto.request.LoginRequest;
+import com.example.backend.dto.response.LoginResponse;
 import com.example.backend.dto.request.UserUpdateRequest;
 import com.example.backend.entity.User;
 import com.example.backend.service.UserService;
@@ -104,5 +106,15 @@ public class UserController {
                 "admins", adminCount,
                 "doctors", doctorCount
         ));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+        try {
+            User user = userService.authenticate(request.getUsernameOrEmail(), request.getPassword());
+            return ResponseEntity.ok(LoginResponse.fromUser(user));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
+        }
     }
 }

@@ -173,4 +173,21 @@ public class UserService {
     public long getUserCountByRole(User.UserRole role) {
         return userRepository.countByRole(role);
     }
+
+    @Transactional(readOnly = true)
+    public User authenticate(String usernameOrEmail, String rawPassword) {
+        Optional<User> byUsername = userRepository.findByUsername(usernameOrEmail);
+        Optional<User> byEmail = byUsername.isPresent() ? byUsername : userRepository.findByEmail(usernameOrEmail);
+        User user = byEmail.orElseThrow(() -> new RuntimeException("Invalid credentials"));
+
+        if (!Boolean.TRUE.equals(user.getEnabled())) {
+            throw new RuntimeException("User is disabled");
+        }
+
+        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+            throw new RuntimeException("Invalid credentials");
+        }
+
+        return user;
+    }
 }

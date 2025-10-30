@@ -1,5 +1,6 @@
+// src/lib/types.ts
 // TypeScript contracts aligned with your controllers.
-// mood is removed from create/update payload.
+// Removed `traffic` from HealthAssessmentResponse.
 
 export type MoodLevel = "LOW" | "MEDIUM" | "HIGH"; // kept for response compatibility if backend returns it
 
@@ -14,7 +15,7 @@ export interface HealthDataResponse {
   diastolicBp?: number;
   sleepHours?: number;
   steps?: number;
-  mood?: MoodLevel; // keep optional for reading if backend returns it
+  mood?: MoodLevel; // optional for reading if backend returns it
   bmi?: number;
 }
 
@@ -28,7 +29,6 @@ export interface HealthDataCreateRequest {
   diastolicBp?: number;
   sleepHours?: number;
   steps?: number;
-  // mood removed from payload
 }
 
 export interface HealthAssessmentResponse {
@@ -36,7 +36,6 @@ export interface HealthAssessmentResponse {
   userId: number;
   type?: "GENERAL" | "DIET" | "SLEEP" | string;
   overallScore?: number;
-  traffic?: "green" | "yellow" | "red";
   createdAt: string;
   highlights?: string[];
   recommendations?: string[];

@@ -17,116 +17,105 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Service for creating and retrieving health assessments.
+ * No "lastOnly" mode. We either use an explicit time range or a daysBack window.
+ */
 @Service
 @Transactional
 public class HealthAssessmentService {
-    
+
     @Autowired
     private HealthAssessmentRepository healthAssessmentRepository;
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
     private HealthDataService healthDataService;
-    
+
     @Autowired
     private GeminiAssessmentService geminiAssessmentService;
-    
+
     /**
-     * Trigger AI health assessment
+     * Trigger an assessment for the given request.
+     * Behavior:
+     *  - if startDate/endDate provided: use that explicit window.
+     *  - otherwise: use daysBack (default to 30 if null/invalid).
      */
     public HealthAssessmentResponse triggerAssessment(HealthAssessmentRequest request) {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        // Fetch health data
+
         List<HealthDataResponse> healthDataList;
-        
+
         if (request.getStartDate() != null && request.getEndDate() != null) {
+            // explicit start/end window
             healthDataList = healthDataService.getHealthDataByUserAndDateRange(
-                request.getUserId(), request.getStartDate(), request.getEndDate());
+                    request.getUserId(), request.getStartDate(), request.getEndDate());
         } else {
+            // daysBack window
+            int days = (request.getDaysBack() != null && request.getDaysBack() > 0)
+                    ? request.getDaysBack() : 30;
             LocalDateTime endDate = LocalDateTime.now();
-            LocalDateTime startDate = endDate.minusDays(request.getDaysBack());
+            LocalDateTime startDate = endDate.minusDays(days);
             healthDataList = healthDataService.getHealthDataByUserAndDateRange(
-                request.getUserId(), startDate, endDate);
+                    request.getUserId(), startDate, endDate);
         }
-        
-        // Use Gemini 2.5 Pro
+
+        // Generate assessment via Gemini or heuristic fallback
         HealthAssessment assessment = geminiAssessmentService.generateGeminiAssessment(
-            healthDataList, request.getType());
-        
-        // Set user information
+                healthDataList, request.getType());
+
+        // Persist and map to DTO
         assessment.setUser(user);
         assessment.setAssessedAt(LocalDateTime.now());
-        
-        // Save assessment result
-        HealthAssessment savedAssessment = healthAssessmentRepository.save(assessment);
-        
-        return HealthAssessmentResponse.fromHealthAssessment(savedAssessment);
+        HealthAssessment saved = healthAssessmentRepository.save(assessment);
+        return HealthAssessmentResponse.fromHealthAssessment(saved);
     }
-    
-    /**
-     * Get all assessment records
-     */
+
+    /* -------- read operations (unchanged) -------- */
+
     @Transactional(readOnly = true)
     public List<HealthAssessmentResponse> getAllAssessments() {
         return healthAssessmentRepository.findAll().stream()
                 .map(HealthAssessmentResponse::fromHealthAssessment)
                 .collect(Collectors.toList());
     }
-    
-    /**
-     * Get assessment by ID
-     */
+
     @Transactional(readOnly = true)
     public Optional<HealthAssessmentResponse> getAssessmentById(Long id) {
         return healthAssessmentRepository.findById(id)
                 .map(HealthAssessmentResponse::fromHealthAssessment);
     }
-    
-    /**
-     * Get all assessments for a user
-     */
+
     @Transactional(readOnly = true)
     public List<HealthAssessmentResponse> getAssessmentsByUserId(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
         return healthAssessmentRepository.findByUserOrderByAssessedAtDesc(user).stream()
                 .map(HealthAssessmentResponse::fromHealthAssessment)
                 .collect(Collectors.toList());
     }
-    
-    /**
-     * Get latest assessment for a user
-     */
+
     @Transactional(readOnly = true)
     public Optional<HealthAssessmentResponse> getLatestAssessmentByUserId(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
         return healthAssessmentRepository.findFirstByUserOrderByAssessedAtDesc(user)
                 .map(HealthAssessmentResponse::fromHealthAssessment);
     }
-    
-    /**
-     * Get assessments by type
-     */
+
     @Transactional(readOnly = true)
-    public List<HealthAssessmentResponse> getAssessmentsByType(Long userId, HealthAssessment.AssessmentType type) {
+    public List<HealthAssessmentResponse> getAssessmentsByType(
+            Long userId, HealthAssessment.AssessmentType type) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
         return healthAssessmentRepository.findByUserAndTypeOrderByAssessedAtDesc(user, type).stream()
                 .map(HealthAssessmentResponse::fromHealthAssessment)
                 .collect(Collectors.toList());
     }
-    
-    /**
-     * Delete assessment
-     */
+
     public void deleteAssessment(Long id) {
         if (!healthAssessmentRepository.existsById(id)) {
             throw new RuntimeException("Assessment not found");

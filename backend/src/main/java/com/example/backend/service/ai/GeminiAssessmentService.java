@@ -3,443 +3,486 @@ package com.example.backend.service.ai;
 import com.example.backend.config.GeminiConfig;
 import com.example.backend.dto.response.HealthDataResponse;
 import com.example.backend.entity.HealthAssessment;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.DoubleStream;
 
 @Service
 public class GeminiAssessmentService {
-    
+
     @Value("${gemini.enabled:false}")
     private Boolean geminiEnabled;
-    
+
     @Autowired(required = false)
     private WebClient geminiWebClient;
-    
+
     @Autowired(required = false)
     private GeminiConfig geminiConfig;
-    
+
     @Value("${gemini.model:gemini-2.5-pro}")
     private String model;
-    
+
     @Value("${gemini.max-tokens:8000}")
     private Integer maxTokens;
-    
+
     @Value("${gemini.temperature:0.7}")
     private Double temperature;
-    
+
     /**
-     * Generate professional health assessment report using Gemini 2.5 Pro
+     * Main entry:
+     * - If Gemini is available and enabled -> call Gemini with a strict JSON schema.
+     * - Otherwise -> fall back to local heuristic scoring (never hard-code 75).
      */
-    public HealthAssessment generateGeminiAssessment(List<HealthDataResponse> healthDataList, 
-                                                     HealthAssessment.AssessmentType type) {
-        
-        // Throw exception if Gemini is not enabled or configured
-        if (!geminiEnabled || geminiWebClient == null || geminiConfig == null) {
-            throw new RuntimeException("Gemini is not enabled or configured. Please check your configuration.");
+    public HealthAssessment generateGeminiAssessment(
+            List<HealthDataResponse> healthDataList,
+            HealthAssessment.AssessmentType type
+    ) {
+        // If Gemini is disabled or not configured, return a heuristic assessment.
+        if (!Boolean.TRUE.equals(geminiEnabled) || geminiWebClient == null || geminiConfig == null) {
+            return buildHeuristicAssessment(healthDataList, type);
         }
-        
-        // Create base assessment object
-        HealthAssessment baseAssessment = new HealthAssessment();
-        baseAssessment.setType(type);
-        
-        // Generate professional report content using Gemini
+
+        // Prepare the base entity
+        HealthAssessment base = new HealthAssessment();
+        base.setType(type);
+
         try {
+            // Prepare prompt
             String healthDataSummary = formatHealthDataForGemini(healthDataList);
-            String baseAssessmentSummary = formatBaseAssessmentForGemini(baseAssessment);
-            
+            String baseAssessmentSummary = "Preliminary analysis prepared, please produce a structured report.";
             String prompt = buildGeminiPrompt(healthDataSummary, baseAssessmentSummary, type);
-            
-            // Build request body
+
+            // Request body
             Map<String, Object> requestBody = new HashMap<>();
             Map<String, Object> contents = new HashMap<>();
             contents.put("parts", List.of(Map.of("text", prompt)));
             requestBody.put("contents", List.of(contents));
-            
+
             Map<String, Object> generationConfig = new HashMap<>();
             generationConfig.put("maxOutputTokens", maxTokens);
             generationConfig.put("temperature", temperature);
             requestBody.put("generationConfig", generationConfig);
-            
-            // Call Gemini API
+
+            // Call Gemini
             String apiKey = geminiConfig.getApiKey();
             String uri = String.format("/models/%s:generateContent?key=%s", model, apiKey);
-            
+
             String response = geminiWebClient.post()
                     .uri(uri)
                     .bodyValue(requestBody)
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
-            
-            // Debug: Print full API response
-            System.out.println("==========================================");
-            System.out.println("Gemini API Full Response:");
-            System.out.println("==========================================");
-            System.out.println(response);
-            System.out.println("==========================================");
-            
-            // Parse response using simple string processing
-            if (response != null) {
-                // Extract Gemini response text
-                String geminiResponse = extractResponseText(response);
-                
-                // Debug: Print extracted text
-                System.out.println("Extracted Gemini Response Text:");
-                System.out.println(geminiResponse != null ? geminiResponse : "NULL (extraction failed)");
-                System.out.println("==========================================");
-                
-                if (geminiResponse != null && !geminiResponse.isEmpty()) {
-                    // Parse Gemini response and update assessment report
-                    return parseGeminiResponse(baseAssessment, geminiResponse);
+
+            // Parse response -> fill assessment
+            String text = extractResponseText(response);
+            if (text == null || text.isBlank()) {
+                // If parsing failed, fall back to heuristic
+                return buildHeuristicAssessment(healthDataList, type);
+            }
+            HealthAssessment parsed = parseGeminiResponse(base, text);
+
+            // If score/risk missing from AI, compute heuristics instead.
+            if (parsed.getOverallScore() == null || parsed.getOverallRiskLevel() == null) {
+                HealthAssessment h = buildHeuristicAssessment(healthDataList, type);
+                if (parsed.getOverallScore() == null) {
+                    parsed.setOverallScore(h.getOverallScore());
+                }
+                if (parsed.getOverallRiskLevel() == null) {
+                    parsed.setOverallRiskLevel(h.getOverallRiskLevel());
                 }
             }
-            
-            // Throw exception if parsing fails
-            throw new RuntimeException("Failed to parse Gemini response");
-            
+            return parsed;
+
         } catch (Exception e) {
-            // Throw exception if Gemini call fails
-            System.err.println("==========================================");
-            System.err.println("Gemini call failed!");
-            System.err.println("Error message: " + e.getMessage());
-            System.err.println("Error class: " + e.getClass().getName());
-            System.err.println("==========================================");
-            e.printStackTrace();
-            throw new RuntimeException("Gemini assessment failed: " + e.getMessage(), e);
+            // Any error -> fall back to heuristic assessment
+            System.err.println("[Gemini] Falling back to heuristic scoring: " + e.getMessage());
+            return buildHeuristicAssessment(healthDataList, type);
         }
     }
-    
+
+    /* ----------------------- Prompt & parsing ----------------------- */
+
+    /**
+     * Prompt now explicitly asks for numeric score and risk enum.
+     * This avoids the "always 75" default.
+     */
+    private String buildGeminiPrompt(String healthDataSummary, String baseAssessment, HealthAssessment.AssessmentType type) {
+        return String.format(
+                "You are a professional health assessment assistant. Use the data to produce a structured report.\n\n" +
+                        "Health Data Summary:\n%s\n\n" +
+                        "Preliminary Assessment:\n%s\n\n" +
+                        "Assessment Type: %s\n\n" +
+                        "CRITICAL: Respond with VALID JSON ONLY. No prose around it. The JSON MUST include:\n" +
+                        "{\n" +
+                        "  \"summary\": string,\n" +
+                        "  \"keyFindings\": string | string[],\n" +
+                        "  \"recommendations\": string | string[],\n" +
+                        "  \"aiInsights\": string,\n" +
+                        "  \"overallScore\": number (0-100),\n" +
+                        "  \"riskLevel\": \"LOW\" | \"MODERATE\" | \"HIGH\"\n" +
+                        "}\n" +
+                        "Keep it concise, evidence-based, and user-friendly.",
+                healthDataSummary,
+                baseAssessment,
+                getTypeDescription(type)
+        );
+    }
+
+    private String getTypeDescription(HealthAssessment.AssessmentType type) {
+        switch (type) {
+            case GENERAL: return "General Health Assessment";
+            case CARDIOVASCULAR: return "Cardiovascular Health Assessment";
+            case NUTRITION: return "Nutrition Health Assessment";
+            case FITNESS: return "Fitness Health Assessment";
+            case MENTAL_HEALTH: return "Mental Health Assessment";
+            case COMPREHENSIVE: return "Comprehensive Health Assessment";
+            default: return "Health Assessment";
+        }
+    }
+
+    private String formatHealthDataForGemini(List<HealthDataResponse> dataList) {
+        if (dataList == null || dataList.isEmpty()) {
+            return "No health data available.";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("Total %d records:\n", dataList.size()));
+        for (HealthDataResponse d : dataList) {
+            sb.append("- ");
+            if (d.getBmi() != null) sb.append(String.format("BMI: %.1f, ", d.getBmi().doubleValue()));
+            if (d.getSystolicPressure() != null && d.getDiastolicPressure() != null)
+                sb.append(String.format("BP: %d/%d, ", d.getSystolicPressure(), d.getDiastolicPressure()));
+            if (d.getHeartRate() != null) sb.append(String.format("HR: %d, ", d.getHeartRate()));
+            if (d.getSleepHours() != null) sb.append(String.format("Sleep: %d h, ", d.getSleepHours()));
+            if (d.getSteps() != null) sb.append(String.format("Steps: %d", d.getSteps()));
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
+
     private String extractResponseText(String jsonResponse) {
-        System.out.println("----------------------------------------");
-        System.out.println("Attempting to extract text from response using Jackson...");
-        
+        if (jsonResponse == null || jsonResponse.isBlank()) return null;
         try {
             ObjectMapper mapper = new ObjectMapper();
-            JsonNode rootNode = mapper.readTree(jsonResponse);
-            
-            // Navigate: candidates[0].content.parts[0].text
-            JsonNode candidates = rootNode.path("candidates");
-            if (!candidates.isArray() || candidates.size() == 0) {
-                System.err.println("No candidates found or candidates is empty");
-                System.out.println("----------------------------------------");
-                return null;
+            JsonNode root = mapper.readTree(jsonResponse);
+            JsonNode candidates = root.path("candidates");
+            if (!candidates.isArray() || candidates.size() == 0) return null;
+            JsonNode parts = candidates.get(0).path("content").path("parts");
+            if (!parts.isArray() || parts.size() == 0) return null;
+            String text = parts.get(0).path("text").asText(null);
+            if (text == null) return null;
+
+            // Strip ``` fences if present
+            String t = text.trim();
+            if (t.startsWith("```")) {
+                t = t.replaceFirst("^```(json)?\\s*", "");
+                if (t.endsWith("```")) t = t.substring(0, t.length() - 3);
+                t = t.trim();
             }
-            
-            JsonNode firstCandidate = candidates.get(0);
-            JsonNode content = firstCandidate.path("content");
-            JsonNode parts = content.path("parts");
-            
-            if (!parts.isArray() || parts.size() == 0) {
-                System.err.println("No parts found or parts is empty");
-                System.out.println("----------------------------------------");
-                return null;
-            }
-            
-            JsonNode firstPart = parts.get(0);
-            JsonNode textNode = firstPart.path("text");
-            
-            if (!textNode.isTextual()) {
-                System.err.println("Text field is not a string");
-                System.out.println("----------------------------------------");
-                return null;
-            }
-            
-            String extractedText = textNode.asText();
-            System.out.println("Extracted raw text (length: " + extractedText.length() + ")");
-            System.out.println("First 200 chars: " + (extractedText.length() > 200 ? extractedText.substring(0, 200) + "..." : extractedText));
-            
-            // Remove markdown code block markers if present
-            if (extractedText.startsWith("```json\n")) {
-                extractedText = extractedText.substring(8); // Remove "```json\n"
-                System.out.println("Removed ```json\\n prefix");
-            } else if (extractedText.startsWith("```\n")) {
-                extractedText = extractedText.substring(4); // Remove "```\n"
-                System.out.println("Removed ```\\n prefix");
-            } else if (extractedText.startsWith("```json")) {
-                extractedText = extractedText.substring(7); // Remove "```json"
-                System.out.println("Removed ```json prefix");
-            } else if (extractedText.startsWith("```")) {
-                extractedText = extractedText.substring(3); // Remove "```"
-                System.out.println("Removed ``` prefix");
-            }
-            
-            // Remove trailing ``` if present
-            if (extractedText.endsWith("\n```")) {
-                extractedText = extractedText.substring(0, extractedText.length() - 4);
-                System.out.println("Removed \\n``` suffix");
-            } else if (extractedText.endsWith("```")) {
-                extractedText = extractedText.substring(0, extractedText.length() - 3);
-                System.out.println("Removed ``` suffix");
-            }
-            
-            // Trim whitespace
-            extractedText = extractedText.trim();
-            
-            // Try to extract JSON from text if it's not pure JSON
-            extractedText = extractJsonFromText(extractedText);
-            
-            System.out.println("Final extracted text (length: " + extractedText.length() + ")");
-            System.out.println("First 200 chars of final: " + (extractedText.length() > 200 ? extractedText.substring(0, 200) + "..." : extractedText));
-            System.out.println("----------------------------------------");
-            
-            return extractedText;
-            
+            return t;
         } catch (Exception e) {
-            System.err.println("Failed to extract text: " + e.getMessage());
-            e.printStackTrace();
-            System.out.println("----------------------------------------");
             return null;
         }
     }
-    
-    private String buildGeminiPrompt(String healthDataSummary, String baseAssessment, HealthAssessment.AssessmentType type) {
-        return String.format(
-            "You are a professional health assessment AI assistant. Based on the following health data and preliminary assessment, generate a professional health assessment report.\n\n" +
-            "Health Data Summary:\n%s\n\n" +
-            "Preliminary Assessment:\n%s\n\n" +
-            "Assessment Type: %s\n\n" +
-            "CRITICAL INSTRUCTIONS:\n" +
-            "You MUST respond with ONLY valid JSON format. Do NOT include any introductory text, explanations, or closing remarks.\n" +
-            "Your response MUST start directly with the opening brace { and end with the closing brace }.\n" +
-            "Do NOT add any text before or after the JSON object.\n" +
-            "The response must be parseable as valid JSON.\n\n" +
-            "Please provide the following content (return in JSON format):\n" +
-            "{\n" +
-            "  \"summary\": \"Detailed health assessment summary (200-300 words, professional and easy to understand)\",\n" +
-            "  \"keyFindings\": \"Key findings (each finding on a new line with • mark, friendly language)\",\n" +
-            "  \"recommendations\": \"Personalized recommendations (each recommendation on a new line with • mark, specific and feasible)\",\n" +
-            "  \"aiInsights\": \"AI insights (200-300 words, deep analysis and personalized advice)\"\n" +
-            "}\n\n" +
-            "Please reply in English, and the language should be professional, friendly, and easy to understand.",
-            healthDataSummary,
-            baseAssessment,
-            getTypeDescription(type)
-        );
-    }
-    
-    private String getTypeDescription(HealthAssessment.AssessmentType type) {
-        switch (type) {
-            case GENERAL:
-                return "General Health Assessment";
-            case CARDIOVASCULAR:
-                return "Cardiovascular Health Assessment";
-            case NUTRITION:
-                return "Nutrition Health Assessment";
-            case FITNESS:
-                return "Fitness Health Assessment";
-            case MENTAL_HEALTH:
-                return "Mental Health Assessment";
-            case COMPREHENSIVE:
-                return "Comprehensive Health Assessment";
-            default:
-                return "Health Assessment";
-        }
-    }
-    
-    private String formatHealthDataForGemini(List<HealthDataResponse> dataList) {
-        if (dataList == null || dataList.isEmpty()) {
-            return "No health data available";
-        }
-        
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("A total of %d health records:\n", dataList.size()));
-        
-        for (HealthDataResponse data : dataList) {
-            sb.append("- ");
-            if (data.getBmi() != null) {
-                sb.append(String.format("BMI: %.1f, ", data.getBmi().doubleValue()));
-            }
-            if (data.getSystolicPressure() != null && data.getDiastolicPressure() != null) {
-                sb.append(String.format("Blood Pressure: %d/%d, ", data.getSystolicPressure(), data.getDiastolicPressure()));
-            }
-            if (data.getHeartRate() != null) {
-                sb.append(String.format("Heart Rate: %d, ", data.getHeartRate()));
-            }
-            if (data.getSleepHours() != null) {
-                sb.append(String.format("Sleep: %d hours, ", data.getSleepHours()));
-            }
-            if (data.getSteps() != null) {
-                sb.append(String.format("Steps: %d", data.getSteps()));
-            }
-            sb.append("\n");
-        }
-        
-        return sb.toString();
-    }
-    
-    private String formatBaseAssessmentForGemini(HealthAssessment assessment) {
-        // Generate brief health data summary
-        return "Health data is being analyzed, waiting for professional assessment report to be generated.";
-    }
-    
-    private HealthAssessment parseGeminiResponse(HealthAssessment baseAssessment, String geminiResponse) {
-        try {
-            // First, try to extract JSON if it's embedded in text
-            String jsonText = extractJsonFromText(geminiResponse);
-            
-            // Validate that it looks like JSON
-            String trimmedJson = jsonText.trim();
-            if (!trimmedJson.startsWith("{") || !trimmedJson.endsWith("}")) {
-                System.err.println("Response does not appear to be valid JSON (doesn't start with { or end with }). Falling back to default.");
-                System.err.println("First 100 chars: " + (trimmedJson.length() > 100 ? trimmedJson.substring(0, 100) : trimmedJson));
-                return baseAssessment;
-            }
-            
-            // Use Jackson to parse JSON (handles both strings and arrays)
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode jsonNode = mapper.readTree(jsonText);
-            
-            // Extract summary
-            JsonNode summaryNode = jsonNode.path("summary");
-            String summary = summaryNode.isTextual() ? summaryNode.asText() : null;
-            baseAssessment.setSummary(summary != null ? summary : "Health assessment analysis completed");
-            
-            // Extract keyFindings (may be array or string)
-            String keyFindings = null;
-            JsonNode keyFindingsNode = jsonNode.path("keyFindings");
-            if (keyFindingsNode.isArray()) {
-                // Convert array to multi-line string
-                StringBuilder sb = new StringBuilder();
-                for (JsonNode item : keyFindingsNode) {
-                    if (item.isTextual()) {
-                        sb.append(item.asText()).append("\n");
-                    }
-                }
-                keyFindings = sb.toString().trim();
-            } else if (keyFindingsNode.isTextual()) {
-                keyFindings = keyFindingsNode.asText();
-            }
-            baseAssessment.setKeyFindings(keyFindings != null ? keyFindings : "No key findings");
-            
-            // Extract recommendations (may be array or string)
-            String recommendations = null;
-            JsonNode recommendationsNode = jsonNode.path("recommendations");
-            if (recommendationsNode.isArray()) {
-                // Convert array to multi-line string
-                StringBuilder sb = new StringBuilder();
-                for (JsonNode item : recommendationsNode) {
-                    if (item.isTextual()) {
-                        sb.append(item.asText()).append("\n");
-                    }
-                }
-                recommendations = sb.toString().trim();
-            } else if (recommendationsNode.isTextual()) {
-                recommendations = recommendationsNode.asText();
-            }
-            baseAssessment.setRecommendations(recommendations != null ? recommendations : "Suggest maintaining a healthy lifestyle");
-            
-            // Extract aiInsights
-            JsonNode aiInsightsNode = jsonNode.path("aiInsights");
-            String aiInsights = aiInsightsNode.isTextual() ? aiInsightsNode.asText() : null;
-            baseAssessment.setAiInsights(aiInsights != null ? aiInsights : "AI analysis completed, recommend regular health checkups");
-            
-            // Set default score and risk level
-            baseAssessment.setOverallScore(BigDecimal.valueOf(75.0));
-            baseAssessment.setOverallRiskLevel(HealthAssessment.RiskLevel.MODERATE);
-            
-            // Update detailed report
-            baseAssessment.setDetailedReport(
-                "# Gemini AI Health Assessment Report\n\n" +
-                (summary != null ? summary : "Health assessment analysis completed") + "\n\n" +
-                "## Key Findings\n" + (keyFindings != null ? keyFindings : "No key findings") + "\n\n" +
-                "## Recommendations\n" + (recommendations != null ? recommendations : "Suggest maintaining a healthy lifestyle") + "\n\n" +
-                "## AI Insights\n" + (aiInsights != null ? aiInsights : "AI analysis completed, recommend regular health checkups")
-            );
-            
-        } catch (Exception e) {
-            System.err.println("Failed to parse Gemini response: " + e.getMessage());
-            e.printStackTrace();
-            // Set default values
-            baseAssessment.setSummary("Health assessment completed");
-            baseAssessment.setKeyFindings("No key findings");
-            baseAssessment.setRecommendations("Suggest maintaining a healthy lifestyle");
-            baseAssessment.setAiInsights("AI analysis completed");
-            baseAssessment.setOverallScore(BigDecimal.valueOf(75.0));
-            baseAssessment.setOverallRiskLevel(HealthAssessment.RiskLevel.MODERATE);
-        }
-        
-        return baseAssessment;
-    }
-    
+
     /**
-     * Extract JSON object from text that might contain additional text before or after JSON
+     * Parse JSON from Gemini. If fields missing, they will be filled by heuristic later.
      */
-    private String extractJsonFromText(String text) {
-        if (text == null || text.isEmpty()) {
-            return text;
-        }
-        
-        // If it already looks like pure JSON (starts and ends with braces), return as is
-        String trimmed = text.trim();
-        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-            return trimmed;
-        }
-        
-        // Try to find JSON object in the text
-        int firstBrace = text.indexOf('{');
-        if (firstBrace == -1) {
-            System.err.println("No opening brace { found in response. Returning original text.");
-            return text;
-        }
-        
-        // Find matching closing brace by counting braces
-        int braceCount = 0;
-        int lastBrace = -1;
-        for (int i = firstBrace; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (c == '{') {
-                braceCount++;
-            } else if (c == '}') {
-                braceCount--;
-                if (braceCount == 0) {
-                    lastBrace = i;
-                    break;
-                }
-            }
-        }
-        
-        if (lastBrace > firstBrace) {
-            String jsonPart = text.substring(firstBrace, lastBrace + 1);
-            System.out.println("Extracted JSON from text (position " + firstBrace + " to " + lastBrace + ")");
-            return jsonPart.trim();
-        }
-        
-        System.err.println("Could not find matching closing brace. Returning original text.");
-        return text;
-    }
-    
-    private String extractJsonField(String json, String fieldName) {
+    private HealthAssessment parseGeminiResponse(HealthAssessment base, String geminiResponse) {
         try {
-            String searchPattern = "\"" + fieldName + "\":\"";
-            int start = json.indexOf(searchPattern);
-            if (start > 0) {
-                start += searchPattern.length();
-                // Find end position
-                int end = json.indexOf("\"", start);
-                // Check for escaped quotes
-                while (end > start && end < json.length() - 1 && json.charAt(end - 1) == '\\') {
-                    end = json.indexOf("\"", end + 1);
-                }
-                if (end > start) {
-                    String value = json.substring(start, end);
-                    // Handle escaped characters
-                    return value.replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            String jsonText = extractJsonFromText(geminiResponse).trim();
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode node = mapper.readTree(jsonText);
+
+            // Textual sections
+            String summary = textOrJoined(node.path("summary"), "\n");
+            String keyFindings = textOrJoined(node.path("keyFindings"), "\n");
+            String recommendations = textOrJoined(node.path("recommendations"), "\n");
+            String aiInsights = textOrJoined(node.path("aiInsights"), "\n");
+
+            base.setSummary(summary != null ? summary : "Health assessment completed.");
+            base.setKeyFindings(keyFindings != null ? keyFindings : "No key findings.");
+            base.setRecommendations(recommendations != null ? recommendations : "Keep a healthy lifestyle.");
+            base.setAiInsights(aiInsights != null ? aiInsights : "AI analysis ready.");
+
+            // Numeric score
+            if (node.has("overallScore") && node.path("overallScore").isNumber()) {
+                double s = node.path("overallScore").asDouble();
+                s = Math.max(0, Math.min(100, s)); // clamp
+                base.setOverallScore(BigDecimal.valueOf(s));
+            }
+
+            // Risk level enum
+            if (node.has("riskLevel") && node.path("riskLevel").isTextual()) {
+                String lvl = node.path("riskLevel").asText().toUpperCase(Locale.ROOT);
+                try {
+                    base.setOverallRiskLevel(HealthAssessment.RiskLevel.valueOf(lvl));
+                } catch (IllegalArgumentException ignored) {
+                    // leave null -> will be derived from score later
                 }
             }
+
+            // Detailed markdown
+            base.setDetailedReport(
+                    "# AI Health Assessment Report\n\n" +
+                            (base.getSummary() != null ? base.getSummary() : "") + "\n\n" +
+                            "## Key Findings\n" + (base.getKeyFindings() != null ? base.getKeyFindings() : "") + "\n\n" +
+                            "## Recommendations\n" + (base.getRecommendations() != null ? base.getRecommendations() : "") + "\n\n" +
+                            "## AI Insights\n" + (base.getAiInsights() != null ? base.getAiInsights() : "")
+            );
+
+            return base;
+
         } catch (Exception e) {
-            System.err.println("Failed to extract field " + fieldName + ": " + e.getMessage());
+            // If parsing fails entirely, return base; caller will fall back to heuristic
+            return base;
+        }
+    }
+
+    private static String textOrJoined(JsonNode node, String sep) {
+        if (node == null || node.isMissingNode() || node.isNull()) return null;
+        if (node.isTextual()) return node.asText();
+        if (node.isArray()) {
+            StringBuilder sb = new StringBuilder();
+            for (JsonNode it : node) if (it.isTextual()) sb.append(it.asText()).append(sep);
+            String s = sb.toString().trim();
+            return s.isEmpty() ? null : s;
         }
         return null;
     }
-}
 
+    /**
+     * Extract a JSON object inside free text by brace matching.
+     */
+    private String extractJsonFromText(String text) {
+        if (text == null) return "";
+        String trimmed = text.trim();
+        if (trimmed.startsWith("{") && trimmed.endsWith("}")) return trimmed;
+
+        int start = text.indexOf('{');
+        if (start < 0) return text;
+        int count = 0;
+        for (int i = start; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '{') count++;
+            else if (c == '}') {
+                count--;
+                if (count == 0) return text.substring(start, i + 1);
+            }
+        }
+        return text.substring(start);
+    }
+
+    /* ----------------------- Heuristic fallback ----------------------- */
+
+    /**
+     * Build a deterministic assessment using simple, transparent rules:
+     * - Ideal BMI 18.5–24.9; ideal sleep 7–9h; steps target 8000+;
+     * - BP: normal < 120/80, elevated 120–129/<80, high ≥ 130/80;
+     * - Resting HR ideal ~60–80.
+     */
+    private HealthAssessment buildHeuristicAssessment(List<HealthDataResponse> data, HealthAssessment.AssessmentType type) {
+        HealthAssessment a = new HealthAssessment();
+        a.setType(type);
+
+        int n = (data == null) ? 0 : data.size();
+        Double avgBmi = avgOrNull(data, d -> d.getBmi() == null ? null : d.getBmi().doubleValue());
+        Double avgSys = avgOrNull(data, d -> d.getSystolicPressure() == null ? null : d.getSystolicPressure().doubleValue());
+        Double avgDia = avgOrNull(data, d -> d.getDiastolicPressure() == null ? null : d.getDiastolicPressure().doubleValue());
+        Double avgHr  = avgOrNull(data, d -> d.getHeartRate() == null ? null : d.getHeartRate().doubleValue());
+        Double avgSleep = avgOrNull(data, d -> d.getSleepHours() == null ? null : d.getSleepHours().doubleValue());
+        Double avgSteps = avgOrNull(data, d -> d.getSteps() == null ? null : d.getSteps().doubleValue());
+
+        double score = 100.0;
+
+        // BMI penalties
+        if (avgBmi == null) {
+            score -= 5;
+        } else {
+            if (avgBmi < 18.5 || avgBmi > 24.9) {
+                double distance = (avgBmi < 18.5) ? 18.5 - avgBmi : avgBmi - 24.9;
+                score -= 10 + Math.min(20, distance * 2.5);
+            }
+        }
+
+        // Blood pressure penalties
+        if (avgSys == null || avgDia == null) {
+            score -= 5;
+        } else {
+            if (avgSys >= 140 || avgDia >= 90) score -= 20;
+            else if (avgSys >= 130 || avgDia >= 80) score -= 12;
+            else if (avgSys >= 120 && avgDia < 80) score -= 6;
+        }
+
+        // Resting HR penalties
+        if (avgHr == null) {
+            score -= 5;
+        } else {
+            if (avgHr < 50 || avgHr > 90) score -= 10;
+            else if (avgHr < 60 || avgHr > 80) score -= 5;
+        }
+
+        // Sleep adjustment
+        if (avgSleep == null) {
+            score -= 5;
+        } else {
+            if (avgSleep < 6) score -= 8;
+            else if (avgSleep < 7) score -= 4;
+            else if (avgSleep > 9) score -= 4;
+        }
+
+        // Steps adjustment
+        if (avgSteps == null) {
+            score -= 3;
+        } else {
+            if (avgSteps >= 10000) score += 3;
+            else if (avgSteps >= 8000) score += 1.5;
+            else if (avgSteps < 5000) score -= 6;
+            else if (avgSteps < 7000) score -= 3;
+        }
+
+        // Fewer samples -> less confidence
+        if (n == 0) score -= 15;
+        else if (n < 3) score -= 5;
+
+        // Clamp
+        score = Math.max(0, Math.min(100, score));
+
+        // Risk mapping
+        HealthAssessment.RiskLevel risk =
+                score >= 80 ? HealthAssessment.RiskLevel.LOW :
+                        score >= 60 ? HealthAssessment.RiskLevel.MODERATE :
+                                HealthAssessment.RiskLevel.HIGH;
+
+        a.setOverallScore(BigDecimal.valueOf(score));
+        a.setOverallRiskLevel(risk);
+
+        // Simple narrative
+        StringBuilder summary = new StringBuilder();
+        summary.append("This assessment uses recent health records and a rule-based scoring model. ");
+        if (avgBmi != null) summary.append(String.format("Average BMI is %.1f. ", avgBmi));
+        if (avgSys != null && avgDia != null) summary.append(String.format("Average blood pressure is %.0f/%.0f. ", avgSys, avgDia));
+        if (avgHr != null) summary.append(String.format("Average resting heart rate is %.0f bpm. ", avgHr));
+        if (avgSleep != null) summary.append(String.format("Average sleep is %.1f hours/night. ", avgSleep));
+        if (avgSteps != null) summary.append(String.format("Average daily steps are %.0f. ", avgSteps));
+        summary.append("The score reflects alignment with broadly accepted wellness ranges.");
+
+        String keyFindings =
+                bullet(assessBmiFinding(avgBmi)) +
+                        bullet(assessBpFinding(avgSys, avgDia)) +
+                        bullet(assessHrFinding(avgHr)) +
+                        bullet(assessSleepFinding(avgSleep)) +
+                        bullet(assessStepsFinding(avgSteps));
+
+        String recs =
+                bullet(recommendBp(avgSys, avgDia)) +
+                        bullet(recommendBmi(avgBmi)) +
+                        bullet(recommendSleep(avgSleep)) +
+                        bullet(recommendSteps(avgSteps));
+
+        a.setSummary(summary.toString());
+        a.setKeyFindings(keyFindings.trim().isEmpty() ? "No major issues detected." : keyFindings.trim());
+        a.setRecommendations(recs.trim().isEmpty() ? "Maintain balanced diet, regular exercise, and periodic check-ups." : recs.trim());
+        a.setAiInsights("This is a deterministic, transparent heuristic score. Enable Gemini to obtain a narrative generated by the LLM.");
+
+        a.setDetailedReport(
+                "# Heuristic Health Assessment Report\n\n" +
+                        a.getSummary() + "\n\n" +
+                        "## Key Findings\n" + a.getKeyFindings() + "\n\n" +
+                        "## Recommendations\n" + a.getRecommendations() + "\n\n" +
+                        "## Notes\n" + a.getAiInsights()
+        );
+
+        return a;
+    }
+
+    /* ----------------------- helpers ----------------------- */
+
+    private static String bullet(String s) {
+        return (s == null || s.isBlank()) ? "" : "• " + s + "\n";
+    }
+
+    private static String assessBmiFinding(Double bmi) {
+        if (bmi == null) return "BMI not available.";
+        if (bmi < 18.5) return String.format("BMI %.1f is under the normal range.", bmi);
+        if (bmi > 24.9) return String.format("BMI %.1f is above the normal range.", bmi);
+        return String.format("BMI %.1f is within the normal range.", bmi);
+    }
+
+    private static String assessBpFinding(Double sys, Double dia) {
+        if (sys == null || dia == null) return "Blood pressure not available.";
+        if (sys >= 140 || dia >= 90) return String.format("Average BP %.0f/%.0f is in the high range.", sys, dia);
+        if (sys >= 130 || dia >= 80) return String.format("Average BP %.0f/%.0f is elevated.", sys, dia);
+        if (sys >= 120 && dia < 80) return String.format("Average BP %.0f/%.0f is slightly elevated.", sys, dia);
+        return String.format("Average BP %.0f/%.0f is within the normal range.", sys, dia);
+    }
+
+    private static String assessHrFinding(Double hr) {
+        if (hr == null) return "Resting heart rate not available.";
+        if (hr < 50 || hr > 90) return String.format("Resting HR %.0f bpm is outside the typical range.", hr);
+        if (hr < 60 || hr > 80) return String.format("Resting HR %.0f bpm is slightly outside the ideal range.", hr);
+        return String.format("Resting HR %.0f bpm is in the ideal range.", hr);
+    }
+
+    private static String assessSleepFinding(Double sleep) {
+        if (sleep == null) return "Sleep duration not available.";
+        if (sleep < 6) return String.format("Average sleep %.1f h is insufficient.", sleep);
+        if (sleep < 7) return String.format("Average sleep %.1f h is slightly short.", sleep);
+        if (sleep > 9) return String.format("Average sleep %.1f h is above the typical range.", sleep);
+        return String.format("Average sleep %.1f h is in the recommended range.", sleep);
+    }
+
+    private static String assessStepsFinding(Double steps) {
+        if (steps == null) return "Daily steps not available.";
+        if (steps >= 10000) return String.format("Average steps %.0f indicate high activity.", steps);
+        if (steps >= 8000) return String.format("Average steps %.0f meet activity target.", steps);
+        if (steps >= 7000) return String.format("Average steps %.0f are close to target.", steps);
+        if (steps >= 5000) return String.format("Average steps %.0f are below target.", steps);
+        return String.format("Average steps %.0f are sedentary.", steps);
+    }
+
+    private static String recommendBp(Double sys, Double dia) {
+        if (sys == null || dia == null) return "Track blood pressure regularly to identify trends.";
+        if (sys >= 130 || dia >= 80) return "Reduce sodium, manage stress, and consult your GP for BP management.";
+        if (sys >= 120 && dia < 80) return "Monitor BP; consider lifestyle tweaks (exercise, diet).";
+        return "Maintain current BP habits.";
+    }
+
+    private static String recommendBmi(Double bmi) {
+        if (bmi == null) return "Record weight/height to monitor BMI.";
+        if (bmi < 18.5) return "Increase calorie-dense, nutritious foods and strength training.";
+        if (bmi > 24.9) return "Adopt a calorie-controlled, protein-rich diet with regular exercise.";
+        return "Maintain balanced diet and activity.";
+    }
+
+    private static String recommendSleep(Double sleep) {
+        if (sleep == null) return "Establish a consistent sleep schedule (target 7–9 hours).";
+        if (sleep < 7) return "Aim for 7–9 hours with good sleep hygiene (fixed schedule, low screens).";
+        if (sleep > 9) return "Evaluate daytime sleepiness; consider adjusting schedule.";
+        return "Keep your sleep routine.";
+    }
+
+    private static String recommendSteps(Double steps) {
+        if (steps == null) return "Track daily steps; target at least 8,000.";
+        if (steps < 5000) return "Add short walks after meals and light cardio to raise daily steps.";
+        if (steps < 8000) return "Increase incidental activity (stairs, standing breaks).";
+        return "Great activity level—keep it up.";
+    }
+
+    private static Double avgOrNull(List<HealthDataResponse> list, java.util.function.Function<HealthDataResponse, Double> f) {
+        if (list == null || list.isEmpty()) return null;
+        DoubleStream stream = list.stream()
+                .map(f)
+                .filter(Objects::nonNull)
+                .mapToDouble(Double::doubleValue);
+        OptionalDouble od = stream.average();
+        return od.isPresent() ? od.getAsDouble() : null;
+    }
+}

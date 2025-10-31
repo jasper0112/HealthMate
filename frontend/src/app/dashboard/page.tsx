@@ -1,61 +1,49 @@
 "use client";
-
-import Breadcrumb from "@/components/Breadcrumb";
-import TodayOverview from "@/components/TodayOverview";
-import Notifications from "@/components/Notifications";
-import Image from "next/image";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import Link from "next/link";
 
 export default function DashboardPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const u = getCurrentUser();
+    if (!u) {
+      router.replace("/login");
+    }
+  }, [router]);
+
   return (
-    <main>
-      <Breadcrumb
-        items={[
-          { label: "Home", href: "/" },
-          { label: "Dashboard", current: true },
-        ]}
-      />
-      <h1 className="hm-section-title">Dashboard</h1>
+    <div className="max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
+      <p className="text-gray-600 mb-6">Please select a module to start</p>
 
-      <div className="hm-card" style={{ marginBottom: "1rem" }}>
-        <TodayOverview />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <ModuleCard title="Health Data Recording" desc="Weight, height, blood pressure, heart rate, sleep, exercise, and more">
+          <Link className="underline" href="/record">Enter HealthData Module</Link>
+        </ModuleCard>
+        <ModuleCard title="AI Health Assessment" desc="Automatically generate summaries, risk levels, and recommendations">
+          <Link className="underline" href="/assessment">Enter Health Assessment Module</Link>
+        </ModuleCard>
+        <ModuleCard title="AI Health Plan" desc="Generate personalized daily/weekly/monthly plans">
+          <Link className="underline" href="/health-plans">Enter HealthPlan Module</Link>
+        </ModuleCard>
+        <ModuleCard title="AI Diet Guidance" desc="AI recipe recommendations, nutrition advice, and precautions">
+          <Link className="underline" href="/diet-guidance">Enter Diet Module</Link>
+        </ModuleCard>
       </div>
+    </div>
+  );
+}
 
-      <div className="hm-card" style={{ marginBottom: "1rem" }}>
-        <Notifications />
-      </div>
-
-      {/* Features grid mapped to API.md modules */}
-      <section style={{ marginTop: "0.5rem" }}>
-        <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.75rem" }}>Quick Actions</h2>
-        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-          {[
-            { href: "/record", title: "Health Data", desc: "Create and view records", icon: "/file.svg" },
-            { href: "/assessment", title: "Health Assessment (AI)", desc: "Run AI analysis", icon: "/window.svg" },
-            { href: "/plans", title: "Health Plan (AI)", desc: "Generate plans", icon: "/vercel.svg" },
-            { href: "/triage", title: "Smart Triage (AI)", desc: "Symptom triage", icon: "/globe.svg" },
-            { href: "/guidance", title: "Diet Guidance (AI)", desc: "Personal diet tips", icon: "/file.svg" },
-            { href: "/guidance", title: "Medication Guidance (AI)", desc: "OTC suggestions", icon: "/window.svg" },
-            { href: "/insurance", title: "Insurance Recommendation (AI)", desc: "Tailored coverage", icon: "/vercel.svg" },
-            { href: "/facilities", title: "Facility", desc: "Search facilities", icon: "/globe.svg" },
-            { href: "/devices", title: "Health Device", desc: "Manage devices", icon: "/file.svg" },
-            { href: "/rewards", title: "Reward System", desc: "Check-in & tiers", icon: "/window.svg" },
-          ].map((f) => (
-            <a
-              key={f.title}
-              href={f.href}
-              className="hm-card"
-              style={{ padding: 16, textDecoration: "none", borderRadius: 12, border: "1px solid #e5e7eb" }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                <Image src={f.icon} alt="icon" width={18} height={18} />
-                <div style={{ fontWeight: 700 }}>{f.title}</div>
-              </div>
-              <div style={{ color: "#6b7280", fontSize: 14 }}>{f.desc}</div>
-            </a>
-          ))}
-        </div>
-      </section>
-    </main>
+function ModuleCard({ title, desc, children }: { title: string; desc: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border border-black/10 p-4 bg-white">
+      <h3 className="font-semibold mb-1">{title}</h3>
+      <p className="text-sm text-gray-600 mb-2">{desc}</p>
+      <div className="text-sm">{children}</div>
+    </div>
   );
 }
 

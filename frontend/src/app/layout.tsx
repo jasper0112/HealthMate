@@ -1,9 +1,8 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
-import Link from "next/link";
-import UserBadge from "@/components/UserBadge";
 import "./globals.css";             // your existing global css
 import "../index.css";       // <- add this line to load the new styles
+import TopBar from "@/components/TopBar";
 
 export const metadata: Metadata = {
   title: "HealthMate",
@@ -17,34 +16,20 @@ export default function RootLayout({
     <html lang="en">
       <body
         style={{
-          background: "#fafbff",
+          background: "linear-gradient(180deg, #f8fafc 0%, #f9fafb 35%, #ffffff 100%)",
           color: "#111827",
           fontFamily:
             'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"',
+          WebkitFontSmoothing: "antialiased",
+          MozOsxFontSmoothing: "grayscale",
         }}
       >
-        {/* Global Top Navigation with user info on the right */}
-        <header className="topbar">
-          <div className="container">
-            <Link href="/" className="brand" style={{ textDecoration: "none", color: "inherit" }}>
-              HealthMate
-            </Link>
-            {/* Navigation links removed per request; breadcrumb below the bar acts as navigation */}
-            <UserBadge />
-          </div>
-        </header>
+        <TopBar />
 
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1rem" }}>{children}</div>
-
-        <footer className="footer">
-          <div className="container" style={{ display: "flex", justifyContent: "space-between" }}>
-            <div>© {new Date().getFullYear()} HealthMate</div>
-            <div style={{ display: "flex", gap: 12 }}>
-              <Link href="/">Home</Link>
-              <Link href="/dashboard">Dashboard</Link>
-            </div>
-          </div>
-        </footer>
+        {/* 页面内容容器（上方留出内边距避免被顶部条覆盖） */}
+        <div className="fade-up" style={{ maxWidth: 1120, margin: "0 auto", padding: "1.25rem", paddingTop: "1.5rem" }}>
+          {children}
+        </div>
       </body>
     </html>
   );

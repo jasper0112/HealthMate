@@ -55,29 +55,3 @@ a:hover{ text-decoration:underline; }
   border-top:1px solid var(--border);
   background: rgba(255,255,255,.72);
 }
-
-/* --------- Global minimalist layout helpers --------- */
-.hm-section-title{
-  margin: 8px 0 14px 0;
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: .2px;
-}
-
-.hm-card{
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  box-shadow: var(--shadow);
-  padding: 14px;
-}
-
-.hm-breadcrumb{
-  display: flex; align-items: center; gap: 6px;
-  font-size: 14px; color: #4b5563;
-  margin: 6px 0 10px 0;
-}
-.hm-breadcrumb .current{ color: #111827; font-weight: 600; }
-
-/* Center page content nicely on large screens */
-main { max-width: 960px; margin: 0 auto; }

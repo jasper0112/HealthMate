@@ -1,27 +1,44 @@
-// src/app/assessment/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
 import AssessmentHistory from "@/components/AssessmentHistory";
 import ExportButtons from "@/components/ExportButtons";
-// Use the API wrapper that already knows BASE url
 import { triggerAssessment } from "@/lib/api";
+import { downloadTextFile, toCSV, printHTML, fmtDateTime } from "@/lib/utils";
+import { getCurrentUser } from "@/lib/auth";
 
 export default function AssessmentPage() {
+  const router = useRouter();
+  const [userId, setUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [latestReport, setLatestReport] = useState<any>(null);
+  const reportRef = useRef<HTMLDivElement | null>(null); // printable area
 
-  // Call the Spring Boot trigger endpoint via our wrapper
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+    setUserId(user.userId);
+  }, [router]);
+
+  // Trigger assessment WITHOUT the "lastOnly" flag
   async function handleGenerateReport() {
+    if (!userId) {
+      setError("请先登录");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const data = await triggerAssessment({
-        userId: 1,       // TODO: replace with actual signed-in user id if available
-        type: "GENERAL", // Or "COMPREHENSIVE" etc.
-        daysBack: 7,
+        userId: userId,
+        type: "GENERAL",
+        daysBack: 7           // keep a simple, predictable lookback window
       });
       setLatestReport(data);
     } catch (e: any) {
@@ -30,6 +47,42 @@ export default function AssessmentPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // Build a CSV row from latest report (for a single-line export)
+  const latestCsvRow = useMemo(() => {
+    if (!latestReport) return null;
+    return [{
+      createdAt: fmtDateTime(latestReport.createdAt),
+      type: latestReport.type ?? "GENERAL",
+      overallScore: latestReport.overallScore ?? "",
+      summary: latestReport.summary ?? "",
+    }];
+  }, [latestReport]);
+
+  // Export only the Latest section as CSV
+  function handleExportCsv() {
+    if (!latestCsvRow) {
+      alert("No latest report yet.");
+      return;
+    }
+    downloadTextFile(`latest_assessment_${Date.now()}.csv`, toCSV(latestCsvRow));
+  }
+
+  // Print only the report block (fixes the blank/shadow-only PDF)
+  function handleExportPdf() {
+    const el = reportRef.current;
+    if (!el) {
+      alert("Nothing to print yet.");
+      return;
+    }
+    // Compose a small, clean HTML using only the report content
+    const html = `
+      <h1>HealthMate</h1>
+      <div class="section"><strong class="muted">Latest Report</strong></div>
+      ${el.innerHTML}
+    `;
+    printHTML(html, "Assessment Report");
   }
 
   return (
@@ -49,10 +102,9 @@ export default function AssessmentPage() {
           {loading ? "Generating..." : "Generate Report"}
         </button>
 
-        <ExportButtons
-          onExportPdf={() => window.print()}
-          onExportCsv={() => alert("CSV export coming soon")}
-        />
+        {/* Removed the "Use only the most recent record" checkbox */}
+
+        <ExportButtons onExportPdf={handleExportPdf} onExportCsv={handleExportCsv} />
       </div>
 
       {/* Error banner */}
@@ -72,10 +124,9 @@ export default function AssessmentPage() {
         </div>
       )}
 
-      {/* Latest Report */}
-      <div className="hm-card" style={{ marginBottom: "1rem" }}>
+      {/* Latest Report (printable block) */}
+      <div className="hm-card" style={{ marginBottom: "1rem" }} ref={reportRef}>
         <h2 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.75rem" }}>Latest Report</h2>
-
         {latestReport ? (
           <div>
             <p>
@@ -86,7 +137,8 @@ export default function AssessmentPage() {
               <strong>Score:</strong> {latestReport.overallScore ?? "-"}
             </p>
             <p>
-              <strong>Summary:</strong> {latestReport.summary ?? "-"}
+              <strong>Summary:</strong>{" "}
+              {latestReport.summary ?? "-"}
             </p>
           </div>
         ) : (
@@ -104,10 +156,12 @@ export default function AssessmentPage() {
       </div>
 
       {/* History table */}
-      <div className="hm-card">
-        <h2 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.75rem" }}>Report History</h2>
-        <AssessmentHistory />
-      </div>
+      {userId && (
+        <div className="hm-card">
+          <h2 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.75rem" }}>Report History</h2>
+          <AssessmentHistory userId={userId} showInternalTitle={false}/>
+        </div>
+      )}
     </main>
   );
 }

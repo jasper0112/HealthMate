@@ -1,0 +1,309 @@
+{
+	"info": {
+		"_postman_id": "healthmate-api-collection",
+		"name": "HealthMate API Collection",
+		"description": "Complete API collection for HealthMate project",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "User APIs",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"usernameOrEmail\": \"testuser\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "login"]
+						}
+					}
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"newuser\",\n  \"email\": \"newuser@example.com\",\n  \"password\": \"password123\",\n  \"fullName\": \"New User\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users"]
+						}
+					}
+				},
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users"]
+						}
+					}
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/users/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Health Assessment APIs",
+			"item": [
+				{
+					"name": "Trigger Assessment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 1,\n  \"type\": \"GENERAL\",\n  \"daysBack\": 7\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/health-assessments/trigger",
+							"host": ["{{base_url}}"],
+							"path": ["api", "health-assessments", "trigger"]
+						}
+					}
+				},
+				{
+					"name": "Get All Assessments",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/health-assessments",
+							"host": ["{{base_url}}"],
+							"path": ["api", "health-assessments"]
+						}
+					}
+				},
+				{
+					"name": "Get User Assessments",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/health-assessments/user/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "health-assessments", "user", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Health Data APIs",
+			"item": [
+				{
+					"name": "Create Health Data",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 1,\n  \"recordedAt\": \"2025-11-01T10:00:00\",\n  \"weight\": 70.5,\n  \"height\": 175,\n  \"heartRate\": 72,\n  \"systolicBp\": 120,\n  \"diastolicBp\": 80,\n  \"steps\": 8000,\n  \"sleepHours\": 7.5\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/health-data",
+							"host": ["{{base_url}}"],
+							"path": ["api", "health-data"]
+						}
+					}
+				},
+				{
+					"name": "Get User Health Data",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/health-data/user/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "health-data", "user", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Latest Health Data",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/health-data/user/1/latest",
+							"host": ["{{base_url}}"],
+							"path": ["api", "health-data", "user", "1", "latest"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Health Plan APIs",
+			"item": [
+				{
+					"name": "Generate Health Plan",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 1,\n  \"type\": \"WEEKLY\",\n  \"daysBack\": 7\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/health-plans/generate",
+							"host": ["{{base_url}}"],
+							"path": ["api", "health-plans", "generate"]
+						}
+					}
+				},
+				{
+					"name": "Get User Health Plans",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/health-plans/user/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "health-plans", "user", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Appointment APIs",
+			"item": [
+				{
+					"name": "Create Appointment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 1,\n  \"facilityId\": 1,\n  \"appointmentDate\": \"2025-11-15T10:00:00\",\n  \"reason\": \"Regular checkup\",\n  \"notes\": \"Annual health check\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/gp-appointments",
+							"host": ["{{base_url}}"],
+							"path": ["api", "gp-appointments"]
+						}
+					}
+				},
+				{
+					"name": "Get User Appointments",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/gp-appointments/user/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "gp-appointments", "user", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Medication APIs",
+			"item": [
+				{
+					"name": "Generate Medication Guidance",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{base_url}}/api/medication-guidance?userId=1&symptoms=头痛,发烧",
+							"host": ["{{base_url}}"],
+							"path": ["api", "medication-guidance"],
+							"query": [
+								{
+									"key": "userId",
+									"value": "1"
+								},
+								{
+									"key": "symptoms",
+									"value": "头痛,发烧"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Diet APIs",
+			"item": [
+				{
+					"name": "Generate Diet Guidance",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{base_url}}/api/diet-guidance?userId=1&healthIssue=高血压",
+							"host": ["{{base_url}}"],
+							"path": ["api", "diet-guidance"],
+							"query": [
+								{
+									"key": "userId",
+									"value": "1"
+								},
+								{
+									"key": "healthIssue",
+									"value": "高血压"
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}
+

@@ -21,15 +21,12 @@ services:
   backend:
     image: eclipse-temurin:17-jre
     container_name: hm-backend
-    depends_on:
-      mysql:
-        condition: service_healthy
     working_dir: /app
     command: ["java","-jar","/app/app.jar"]
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://hm-mysql:3306/5620?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
+      SPRING_DATASOURCE_URL: jdbc:mysql://47.107.131.134:3306/5620?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_DATASOURCE_PASSWORD: jfq123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
     ports:
       - "8080:8080"
@@ -37,6 +34,7 @@ services:
       - ./backend/target/backend-0.0.1-SNAPSHOT.jar:/app/app.jar:ro
     networks:
       - hm-net
+    restart: unless-stopped
 
   frontend:
     image: node:20-alpine
@@ -44,8 +42,9 @@ services:
     depends_on:
       - backend
     working_dir: /app
-    command: sh -c "npm config set registry https://registry.npmmirror.com && ( [ -f node_modules/.bin/next ] || npm ci ) && npm run dev -- -p 3000"
+    command: sh /app/start.sh
     environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
       - NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true

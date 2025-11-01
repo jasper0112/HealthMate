@@ -511,3 +511,75 @@ export async function deleteDietGuidance(id: number) {
   if (!res.ok) throw new Error("Failed to delete diet guidance");
   return true;
 }
+
+export type MedicationGuidance = {
+  medGuidanceId?: number;
+  userId?: number;
+  username?: string | null;
+  symptoms?: string | null;
+  conditionDescription?: string | null;
+  otcMedications?: string | null;
+  usageInstructions?: string | null;
+  precautions?: string | null;
+  sideEffects?: string | null;
+  recommendedPharmacies?: string | null;
+  priceComparison?: string | null;
+  guidance?: string | null;
+  createdAt?: string | null;
+};
+
+
+
+
+
+export async function generateMedicationGuidance(
+  userId: number,
+  symptoms: string
+): Promise<MedicationGuidance> {
+  const url = `${BASE}/api/medication-guidance?userId=${encodeURIComponent(
+    userId
+  )}&symptoms=${encodeURIComponent(symptoms)}`;
+
+  const res = await fetch(url, { method: "POST" }); // 不需要手动写 Content-Length
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Failed to generate medication guidance");
+  }
+  return res.json();
+}
+
+import type { MedicationGuidance } from "./types";
+
+export async function generateMedicationGuidance(
+  userId: number,
+  symptoms: string
+): Promise<MedicationGuidance> {
+  const url = `${BASE}/api/medication-guidance?userId=${encodeURIComponent(
+    userId
+  )}&symptoms=${encodeURIComponent(symptoms)}`;
+
+  const res = await fetch(url, { method: "POST" });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Failed to generate medication guidance");
+  }
+  return res.json();
+}
+
+import type { MedicationGuidance } from "./types";
+
+export async function generateMedicationGuidance(
+  userId: number,
+  symptoms: string
+): Promise<MedicationGuidance> {
+  const url = `${BASE}/api/medication-guidance?userId=${encodeURIComponent(
+    userId
+  )}&symptoms=${encodeURIComponent(symptoms)}`;
+
+  const res = await fetch(url, { method: "POST" });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Failed to generate medication guidance");
+  }
+  return res.json();
+}

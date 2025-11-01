@@ -7,11 +7,9 @@ import { createHealthData, syncAllConnectedDevices } from "../lib/api";
 import { toLocalInputValue, fromLocalInputValue } from "../lib/utils"; // <-- use timezone-safe helpers
 import "../styles/card.css";
 
-const USER_ID = Number(process.env.NEXT_PUBLIC_USER_ID ?? 1);
-
 // Default payload with current timestamp (store as ISO for backend)
-const defaultReq = (): HealthDataCreateRequest => ({
-  userId: USER_ID,
+const defaultReq = (userId: number): HealthDataCreateRequest => ({
+  userId: userId,
   recordedAt: new Date().toISOString(),
   weight: undefined,
   height: undefined,
@@ -22,8 +20,8 @@ const defaultReq = (): HealthDataCreateRequest => ({
   steps: undefined,
 });
 
-export default function DataRecordForm({ onSaved }: { onSaved?: () => void }) {
-  const [m, setM] = useState<HealthDataCreateRequest>(defaultReq());
+export default function DataRecordForm({ userId, onSaved }: { userId: number; onSaved?: () => void }) {
+  const [m, setM] = useState<HealthDataCreateRequest>(defaultReq(userId));
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -58,7 +56,7 @@ export default function DataRecordForm({ onSaved }: { onSaved?: () => void }) {
 
       await createHealthData(m);
       setMsg("Saved successfully.");
-      setM(defaultReq());
+      setM(defaultReq(userId));
       onSaved?.(); // safe optional callback (prevents 'is not a function')
     } catch (err: any) {
       setMsg(err.message ?? "Save failed.");
@@ -71,7 +69,7 @@ export default function DataRecordForm({ onSaved }: { onSaved?: () => void }) {
     setBusy(true);
     setMsg(null);
     try {
-      const results = await syncAllConnectedDevices(USER_ID);
+      const results = await syncAllConnectedDevices(userId);
       const failed = results.filter((r) => !r.ok).length;
       setMsg(
         failed

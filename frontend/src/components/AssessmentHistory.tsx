@@ -20,6 +20,14 @@ function useClientPaging<T>(all: T[], pageSize: number) {
   return { page, setPage, totalPages, slice };
 }
 
+function cleanDetailed(text?: string) {
+  if (!text) return "-";
+  return text
+    .replace(/^#{1,6}\s.*$/gm, "") // strip '#', '##' lines
+    .replace(/\s+/g, " ")          // collapse whitespace/newlines
+    .trim();
+}
+
 /** Props for toggling the internal title to avoid duplicate headings. */
 type Props = {
   /** When false, the internal <h3> "Report History" is not rendered. */
@@ -68,6 +76,7 @@ export default function AssessmentHistory({ showInternalTitle = true, userId }: 
       score: it.overallScore ?? "",
       type: it.type ?? "",
       summary: (it as any).summary ?? "",
+      detailed: cleanDetailed((it as any).detailedReport),
     }));
     downloadTextFile(`assessment_history_${Date.now()}.csv`, toCSV(rows));
   }

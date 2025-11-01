@@ -56,3 +56,39 @@ a.btn.btn-solid {
 .btn.btn-solid:hover { background: #111827; color: #fff !important; }
 .btn.btn-solid:disabled { opacity: .85; color: #fff !important; }
 
+/* --- Cards & Surfaces --------------------------------------------------- */
+.card {
+  border: 1px solid rgba(17,24,39,.08);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 30px rgba(0,0,0,.06);
+}
+
+/* --- Form elements ------------------------------------------------------ */
+.input, .select, .textarea {
+  width: 100%;
+  border: 1px solid rgba(17,24,39,.1);
+  border-radius: 10px;
+  padding: .55rem .75rem;
+  background: #fff;
+  transition: box-shadow .15s ease, border-color .15s ease;
+}
+.input:focus, .select:focus, .textarea:focus {
+  outline: none;
+  border-color: rgba(17,24,39,.22);
+  box-shadow: 0 0 0 4px rgba(99,102,241,.12);
+}
+
+/* --- Subtle animations -------------------------------------------------- */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp .36s ease both; }
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+.scale-in { animation: scaleIn .22s ease both; }
+

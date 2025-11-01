@@ -6,3 +6,4 @@ node_modules/
 *.log
 frontend/.next/
 frontend/node_modules/
+.vscode/

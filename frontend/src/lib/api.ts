@@ -1,3 +1,4 @@
+// frontend/src/lib/api.ts
 // Centralized API client with consistent BASE/PATH and solid error handling.
 // This version mirrors client field names to server-preferred names on send
 // (height -> heightCm; systolicBp/diastolicBp -> systolicPressure/diastolicPressure).
@@ -7,6 +8,7 @@ import {
   HealthDataResponse,
   HealthAssessmentResponse,
 } from "./types";
+import type { MedicationGuidance } from "./types";  // ★ 只在这里引入一次
 import { avg, sum, daysAgoISO } from "./utils";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
@@ -18,6 +20,7 @@ export const PATH = {
   users: "/api/users",
   plans: "/api/health-plans",
   diet: "/api/diet-guidance",
+  // 注意：medication-guidance 直接用绝对路径，后面函数里拼接
 };
 
 const USER_ID = Number(process.env.NEXT_PUBLIC_USER_ID ?? 1);
@@ -49,8 +52,8 @@ export type RegisterPayload = {
   email: string;
   password: string;
   fullName?: string;
-  gender?: string; // BACKEND enum string; optional
-  dateOfBirth?: string; // ISO string if provided
+  gender?: string;
+  dateOfBirth?: string;
   phoneNumber?: string;
   address?: string;
 };
@@ -146,49 +149,30 @@ export async function listAllUsers(): Promise<UserResponse[]> {
 
 /**
  * 获取所有用户（包括启用和未启用的）
- * 通过合并启用和禁用用户的列表来确保获取完整数据
  */
 export async function listAllUsersIncludingDisabled(): Promise<UserResponse[]> {
   try {
-    // 尝试直接获取所有用户
     const allUsers = await listAllUsers();
-    // 如果已经包含了启用的和禁用的用户，直接返回
     const hasEnabled = allUsers.some((u) => u.enabled === true);
     const hasDisabled = allUsers.some((u) => u.enabled === false);
-    
-    if (hasEnabled && hasDisabled) {
-      return allUsers;
-    }
-    
-    // 如果缺少某些状态的用户，补充获取
+    if (hasEnabled && hasDisabled) return allUsers;
+
     const [enabledUsers, disabledUsers] = await Promise.all([
       getUsersByEnabled(true).catch(() => []),
       getUsersByEnabled(false).catch(() => []),
     ]);
-    
-    // 合并去重
+
     const userMap = new Map<number, UserResponse>();
-    allUsers.forEach((u) => {
-      if (u?.id) userMap.set(u.id, u);
-    });
-    [...enabledUsers, ...disabledUsers].forEach((u) => {
-      if (u?.id) userMap.set(u.id, u);
-    });
-    
+    allUsers.forEach((u) => u?.id && userMap.set(u.id, u));
+    [...enabledUsers, ...disabledUsers].forEach((u) => u?.id && userMap.set(u.id, u));
     return Array.from(userMap.values());
-  } catch (e: any) {
-    // 如果 listAllUsers 失败，尝试合并启用和禁用的用户
+  } catch {
     const [enabledUsers, disabledUsers] = await Promise.all([
       getUsersByEnabled(true).catch(() => []),
       getUsersByEnabled(false).catch(() => []),
     ]);
-    
-    // 合并去重
     const userMap = new Map<number, UserResponse>();
-    [...enabledUsers, ...disabledUsers].forEach((u) => {
-      if (u?.id) userMap.set(u.id, u);
-    });
-    
+    [...enabledUsers, ...disabledUsers].forEach((u) => u?.id && userMap.set(u.id, u));
     return Array.from(userMap.values());
   }
 }
@@ -212,43 +196,36 @@ export async function getUsersByRole(role: "USER" | "ADMIN" | "DOCTOR"): Promise
 }
 
 export async function getUsersByEnabled(enabled: boolean): Promise<UserResponse[]> {
-  // 确保布尔值正确转换为 URL 查询参数字符串
   const enabledParam = enabled ? "true" : "false";
   const url = `${BASE}${PATH.users}/enabled?enabled=${enabledParam}`;
-  
+
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(text || "Failed to load users");
   }
   const data = await res.json();
-  
-  // 确保返回的是数组，如果不是数组则转换为数组
+
   if (Array.isArray(data)) {
-    // 验证返回的用户是否匹配查询条件
-    return data.filter(user => user.enabled === enabled);
+    return data.filter((user) => user.enabled === enabled);
   }
-  
-  // 如果返回的是对象，尝试提取数组
+
   if (data && typeof data === "object") {
     let userArray: any[] = [];
-    // 可能的结构：{ users: [...] } 或 { data: [...] } 或 { content: [...] }
     if (Array.isArray(data.users)) userArray = data.users;
     else if (Array.isArray(data.data)) userArray = data.data;
     else if (Array.isArray(data.content)) userArray = data.content;
     else if (Array.isArray(Object.values(data)[0])) {
       userArray = Object.values(data)[0] as any[];
     }
-    
     if (userArray.length > 0) {
-      // 验证返回的用户是否匹配查询条件
-      return userArray.filter((item): item is UserResponse => 
-        typeof item === "object" && item !== null && "id" in item && item.enabled === enabled
-      ) as UserResponse[];
+      return userArray.filter(
+        (item): item is UserResponse =>
+          typeof item === "object" && item !== null && "id" in item && item.enabled === enabled
+      );
     }
   }
-  
-  // 如果都不是，返回空数组
+
   return [];
 }
 
@@ -272,16 +249,12 @@ export async function deleteUser(id: number) {
 /* ---------------- generic helpers ---------------- */
 
 async function del(url: string) {
-  try {
-    const res = await fetch(url, { method: "DELETE" });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(text || "Delete request failed");
-    }
-    return true; // 204 OK
-  } catch (e: any) {
-    throw new Error(e?.message || "Failed to fetch");
+  const res = await fetch(url, { method: "DELETE" });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Delete request failed");
   }
+  return true; // 204
 }
 
 /* ---------------- HEALTH DATA ---------------- */
@@ -289,9 +262,7 @@ async function del(url: string) {
 export async function listHealthDataByUser(
   userId = USER_ID
 ): Promise<HealthDataResponse[]> {
-  const res = await fetch(`${BASE}${PATH.data}/user/${userId}`, {
-    cache: "no-store",
-  });
+  const res = await fetch(`${BASE}${PATH.data}/user/${userId}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to load health data");
   return res.json();
 }
@@ -301,11 +272,10 @@ export async function deleteHealthData(id: number) {
 }
 
 export async function createHealthData(data: HealthDataCreateRequest) {
-  // Mirror to backend-preferred names while keeping client names.
   const payload: any = {
     ...data,
-    heightCm: data.height,                   // map cm to heightCm
-    systolicPressure: data.systolicBp,       // BP name mapping
+    heightCm: data.height,
+    systolicPressure: data.systolicBp,
     diastolicPressure: data.diastolicBp,
   };
   return postJson(`${BASE}${PATH.data}`, payload);
@@ -322,9 +292,7 @@ export async function listConnectedDevices(userId = USER_ID) {
 }
 
 export async function syncDevice(deviceId: number) {
-  const res = await fetch(`${BASE}${PATH.devices}/${deviceId}/sync`, {
-    method: "PUT",
-  });
+  const res = await fetch(`${BASE}${PATH.devices}/${deviceId}/sync`, { method: "PUT" });
   if (!res.ok) throw new Error("Failed to sync device");
   return res.json();
 }
@@ -348,19 +316,14 @@ export async function syncAllConnectedDevices(userId = USER_ID) {
 export async function latestAssessmentByUser(
   userId = USER_ID
 ): Promise<HealthAssessmentResponse | null> {
-  const res = await fetch(
-    `${BASE}${PATH.assessment}/user/${userId}/latest`,
-    { cache: "no-store" }
-  );
+  const res = await fetch(`${BASE}${PATH.assessment}/user/${userId}/latest`, { cache: "no-store" });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error("Failed to fetch latest assessment");
   return res.json();
 }
 
 export async function listAssessmentsByUser(userId = USER_ID) {
-  const res = await fetch(`${BASE}${PATH.assessment}/user/${userId}`, {
-    cache: "no-store",
-  });
+  const res = await fetch(`${BASE}${PATH.assessment}/user/${userId}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to load assessments");
   return res.json();
 }
@@ -457,12 +420,11 @@ export async function listHealthPlansByType(userId: number, type: HealthPlanType
 /* ---------------- DIET GUIDANCE ---------------- */
 
 export type DietGuidance = {
-  id?: number; // 前端兼容字段
-  dietGuidanceId?: number; // 后端实际字段
+  id?: number;
+  dietGuidanceId?: number;
   userId?: number;
   username?: string | null;
   healthIssue?: string | null;
-  // 后端实际字段
   foodRecommendations?: string | null;
   avoidFoods?: string | null;
   supplementRecommendations?: string | null;
@@ -471,7 +433,6 @@ export type DietGuidance = {
   guidance?: string | null;
   nutritionalBenefits?: string | null;
   sampleMenu?: string | null;
-  // 前端兼容字段
   summary?: string | null;
   recommendations?: string | null;
   aiInsights?: string | null;
@@ -510,4 +471,19 @@ export async function deleteDietGuidance(id: number) {
   const res = await fetch(`${BASE}${PATH.diet}/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete diet guidance");
   return true;
+}
+
+/* ---------------- MEDICATION GUIDANCE (OTC) ---------------- */
+
+export async function generateMedicationGuidance(
+  userId: number,
+  symptoms: string
+): Promise<MedicationGuidance> {
+  const url = `${BASE}/api/medication-guidance?userId=${encodeURIComponent(userId)}&symptoms=${encodeURIComponent(symptoms)}`;
+  const res = await fetch(url, { method: "POST" }); // 不需要手写 Content-Length
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Failed to generate medication guidance");
+  }
+  return res.json();
 }

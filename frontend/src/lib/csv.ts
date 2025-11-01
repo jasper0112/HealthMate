@@ -1,10 +1,11 @@
 // src/lib/csv.ts
-// Export latest report + history to UTF-8 CSV with BOM (works well with Excel)
+// Export latest report + history to UTF-8 CSV with BOM (compatible with Excel)
 
 export type ReportRow = {
-  date: string;   // formatted date string
+  date: string;     // formatted date string
   score: number;
   summary: string;
+  detailed?: string;
 };
 
 export function exportReportsToCsv(
@@ -13,11 +14,22 @@ export function exportReportsToCsv(
   filename = "HealthMate_Report.csv"
 ) {
   const rows: string[][] = [];
-  rows.push(["Date", "Score", "Summary"]); // header
+  rows.push(["Date", "Score", "Summary", "Detailed"]); // added Detailed column
 
-  rows.push([latest.date, String(latest.score), sanitize(latest.summary)]);
+  rows.push([
+    latest.date,
+    String(latest.score),
+    sanitize(latest.summary),
+    sanitizeDetailed(latest.detailed ?? "")
+  ]);
+
   for (const r of history) {
-    rows.push([r.date, String(r.score), sanitize(r.summary)]);
+    rows.push([
+      r.date,
+      String(r.score),
+      sanitize(r.summary),
+      sanitizeDetailed(r.detailed ?? "")
+    ]);
   }
 
   const csv = rows.map(r => r.map(csvEscape).join(",")).join("\r\n");
@@ -31,12 +43,22 @@ export function exportReportsToCsv(
   URL.revokeObjectURL(url);
 }
 
+/** Escape fields with quotes when needed */
 function csvEscape(value: string) {
   const needsQuotes = /[",\r\n]/.test(value);
   const escaped = value.replace(/"/g, '""');
   return needsQuotes ? `"${escaped}"` : escaped;
 }
 
+/** Remove line breaks for CSV */
 function sanitize(value: string) {
-  return (value ?? "").replace(/\r?\n/g, " ").trim();
+  return (value ?? "").replace(/\s+/g, " ").trim();
+}
+
+/** Remove Markdown headings (#, ## etc) then compact text */
+function sanitizeDetailed(text: string) {
+  return text
+    .replace(/^#{1,6}\s.*$/gm, "") // remove headings like #, ##, ### etc.
+    .replace(/\s+/g, " ")          // collapse linebreaks/spaces
+    .trim();
 }

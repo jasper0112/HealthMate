@@ -1,10 +1,31 @@
 // src/app/record/page.tsx
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
 import DataRecordForm from "@/components/DataRecordForm";
 import DataHistoryTable from "@/components/DataHistoryTable";
 import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth";
 
 export default function RecordPage() {
+  const router = useRouter();
+  const [userId, setUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+    setUserId(user.userId);
+  }, [router]);
+
+  if (!userId) {
+    return null; // 等待重定向
+  }
+
   return (
     <main>
       <Breadcrumb
@@ -28,11 +49,11 @@ export default function RecordPage() {
       </div>
 
       <div className="hm-card" style={{ marginBottom: "1rem" }}>
-              <DataRecordForm />
+              <DataRecordForm userId={userId} />
             </div>
 
             <div className="hm-card">
-              <DataHistoryTable />
+              <DataHistoryTable userId={userId} />
             </div>
     </main>
   );

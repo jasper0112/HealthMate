@@ -1,25 +1,42 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
 import AssessmentHistory from "@/components/AssessmentHistory";
 import ExportButtons from "@/components/ExportButtons";
 import { triggerAssessment } from "@/lib/api";
 import { downloadTextFile, toCSV, printHTML, fmtDateTime } from "@/lib/utils";
+import { getCurrentUser } from "@/lib/auth";
 
 export default function AssessmentPage() {
+  const router = useRouter();
+  const [userId, setUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [latestReport, setLatestReport] = useState<any>(null);
   const reportRef = useRef<HTMLDivElement | null>(null); // printable area
 
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+    setUserId(user.userId);
+  }, [router]);
+
   // Trigger assessment WITHOUT the "lastOnly" flag
   async function handleGenerateReport() {
+    if (!userId) {
+      setError("Please login first");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const data = await triggerAssessment({
-        userId: 1,            // TODO: replace with the signed-in user id
+        userId: userId,
         type: "GENERAL",
         daysBack: 7           // keep a simple, predictable lookback window
       });
@@ -40,6 +57,7 @@ export default function AssessmentPage() {
       type: latestReport.type ?? "GENERAL",
       overallScore: latestReport.overallScore ?? "",
       summary: latestReport.summary ?? "",
+      detailed: cleanDetailed(latestReport.detailedReport),
     }];
   }, [latestReport]);
 
@@ -66,6 +84,14 @@ export default function AssessmentPage() {
       ${el.innerHTML}
     `;
     printHTML(html, "Assessment Report");
+  }
+
+  function cleanDetailed(text: string | undefined): string {
+  if (!text) return "-";
+  return text
+    .replace(/^#{1,6}\s.*$/gm, "") // remove headings like "#", "##"
+    .replace(/\n{2,}/g, "\n") // collapse multiple blank lines
+    .trim();
   }
 
   return (
@@ -123,6 +149,15 @@ export default function AssessmentPage() {
               <strong>Summary:</strong>{" "}
               {latestReport.summary ?? "-"}
             </p>
+            <p>
+              <strong>Detailed:</strong>{" "}
+              <span
+                style={{ whiteSpace: "pre-wrap" }}
+                dangerouslySetInnerHTML={{
+                  __html: cleanDetailed(latestReport.detailedReport).replace(/\n/g, "<br/>")
+                }}
+              />
+            </p>
           </div>
         ) : (
           <div
@@ -139,10 +174,12 @@ export default function AssessmentPage() {
       </div>
 
       {/* History table */}
-      <div className="hm-card">
-        <h2 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.75rem" }}>Report History</h2>
-        <AssessmentHistory userId={1} showInternalTitle={false}/>
-      </div>
+      {userId && (
+        <div className="hm-card">
+          <h2 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.75rem" }}>Report History</h2>
+          <AssessmentHistory userId={userId} showInternalTitle={false}/>
+        </div>
+      )}
     </main>
   );
 }

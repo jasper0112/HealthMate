@@ -106,91 +106,156 @@ HealthMate/
 
 ---
 
-## 🚀 快速开始 (Quick Start)
+## 🚀 Quick Start
 
-### 首次下载/解压后的构建步骤
+### Prerequisites
 
-如果你刚刚从 GitHub 下载并解压了这个项目，请按照以下步骤操作：
+- **Docker Desktop** installed and running
+- **Java 17+** (for building backend locally)
+- **Maven** (or Maven Wrapper included in project)
+- **Node.js 20+** (optional, for local frontend development)
 
-#### 方法一：使用构建脚本（推荐）✨
+### First-Time Setup
+
+After cloning or downloading this project, follow these steps:
+
+#### Method 1: Using Build Scripts (Recommended) ✨
+
+The build scripts automatically handle all setup steps:
+- Build backend JAR file
+- Check Docker environment
+- Create `.env` file from template (if needed)
+- Start all Docker services
+
+##### Linux / macOS
 
 ```bash
-# 1. 为构建脚本添加执行权限
+# 1. Make build script executable (if needed)
 chmod +x build.sh
 
-# 2. 运行构建脚本（会自动构建后端并启动 Docker）
+# 2. Run the build script
 ./build.sh
 ```
 
-构建脚本会自动完成：
-- ✅ 构建后端 JAR 文件
-- ✅ 检查 Docker 环境
-- ✅ 启动所有 Docker 服务
+##### Windows PowerShell
 
-#### 方法二：手动构建步骤
+```powershell
+# Run the PowerShell build script
+.\build.ps1
+```
 
-如果你更喜欢手动操作，按以下步骤：
+##### Windows CMD
+
+```cmd
+# Run the batch build script
+build.cmd
+```
+
+#### Method 2: Manual Build Steps
+
+If you prefer manual control, follow these steps:
 
 ```bash
-# 1. 进入后端目录
+# 1. Navigate to backend directory
 cd backend
 
-# 2. 为 Maven Wrapper 添加执行权限
-chmod +x mvnw
-
-# 3. 构建 Maven 项目（生成 JAR 文件）
+# 2. Build the backend JAR file
+# On Linux/macOS:
 ./mvnw clean package -DskipTests
 
-# 4. 返回项目根目录
+# On Windows:
+mvnw.cmd clean package -DskipTests
+
+# 3. Return to project root
 cd ..
 
-# 5. 启动 Docker Compose 服务
+# 4. Create .env file (if not exists)
+# Copy from .env.example and edit as needed
+cp .env.example .env  # Linux/macOS
+copy .env.example .env  # Windows
+
+# Edit .env and set MYSQL_ROOT_PASSWORD (if using local MySQL)
+
+# 5. Start Docker Compose services
 docker compose up -d
 ```
 
-#### 验证服务是否正常运行
+### Verify Services
 
 ```bash
-# 查看所有服务状态
+# Check service status
 docker compose ps
 
-# 查看后端日志（确认是否启动成功）
+# View backend logs (should see "Started BackendApplication")
 docker compose logs backend --tail 50
 
-# 应该看到类似 "Started BackendApplication" 的日志
+# View frontend logs
+docker compose logs frontend --tail 50
+
+# View all logs in real-time
+docker compose logs -f
 ```
 
-#### 访问服务
+### Access Services
 
-- **前端应用**: http://localhost:3000
-- **后端 API**: http://localhost:8080
+- **Frontend Application**: http://localhost:3000
+- **Backend API**: http://localhost:8080
 
-#### 常用命令
+### Common Commands
 
 ```bash
-# 停止所有服务
+# Stop all services
 docker compose down
 
-# 重启所有服务
+# Restart all services
 docker compose restart
 
-# 查看实时日志
+# View real-time logs
 docker compose logs -f
 
-# 只查看后端日志
+# View specific service logs
 docker compose logs -f backend
+docker compose logs -f frontend
 
-# 停止并删除所有容器和网络
+# Stop and remove all containers and volumes
 docker compose down -v
+
+# Rebuild and restart services
+docker compose up -d --build
 ```
 
-#### 常见问题
+### Troubleshooting
 
-**问题**: Docker 容器显示 "Restarting" 状态或报错 "Invalid or corrupt jarfile"
+#### Issue: Docker container shows "Restarting" or "Invalid or corrupt jarfile"
 
-**原因**: 没有先构建后端 JAR 文件就启动了 Docker
+**Cause**: Backend JAR file was not built before starting Docker
 
-**解决**: 按照上面的步骤先构建后端，然后再启动 Docker
+**Solution**: Run the build script or manually build the backend first:
+```bash
+cd backend
+./mvnw clean package -DskipTests  # Linux/macOS
+mvnw.cmd clean package -DskipTests  # Windows
+cd ..
+docker compose restart backend
+```
+
+#### Issue: Docker is not running
+
+**Solution**: Start Docker Desktop before running the build script
+
+#### Issue: Build script fails on Windows PowerShell
+
+**Solution**: Ensure PowerShell execution policy allows scripts:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+#### Issue: Frontend cannot connect to backend
+
+**Solution**: 
+- Verify backend is running: `docker compose logs backend`
+- Check `NEXT_PUBLIC_API_BASE_URL` environment variable
+- Ensure both services are up: `docker compose ps`
 
 ---
 

@@ -1,12 +1,10 @@
 #!/bin/sh
-set -e
-
 # Set npm registry
-npm config set registry https://registry.npmmirror.com
+npm config set registry https://registry.npmmirror.com || true
 
 # Install dependencies if needed
 if [ ! -f node_modules/.bin/next ]; then
-  npm ci
+  npm ci || true
 fi
 
 # Export environment variables for Next.js

@@ -42,7 +42,7 @@ services:
     depends_on:
       - backend
     working_dir: /app
-    command: sh /app/start.sh
+    command: sh -c "npm config set registry https://registry.npmmirror.com && ([ -f node_modules/.bin/next ] || npm ci) && export NEXT_PUBLIC_API_BASE_URL=$${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080} && npm run dev -- -p 3000"
     environment:
       - NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
       - NPM_CONFIG_REGISTRY=https://registry.npmmirror.com

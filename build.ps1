@@ -1,99 +1,99 @@
-# HealthMate 项目构建脚本 (Windows PowerShell 版本)
-# 用途：首次下载或解压项目后，使用此脚本构建后端并启动服务
+# HealthMate Project Build Script (Windows PowerShell)
+# Purpose: Build backend and start Docker services
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "🚀 开始构建 HealthMate 项目..." -ForegroundColor Cyan
+Write-Host "Starting HealthMate project build..." -ForegroundColor Cyan
 Write-Host ""
 
-# 检查是否在项目根目录
+# Check if in project root
 if (-not (Test-Path "docker-compose.yml")) {
-    Write-Host "❌ 错误：请在项目根目录运行此脚本" -ForegroundColor Red
+    Write-Host "ERROR: Please run this script from project root directory" -ForegroundColor Red
     exit 1
 }
 
-# 1. 进入后端目录并构建
-Write-Host "📦 步骤 1/3: 构建后端 JAR 文件..." -ForegroundColor Yellow
+# Step 1: Build backend JAR
+Write-Host "Step 1/3: Building backend JAR file..." -ForegroundColor Yellow
 Push-Location backend
 
-# 检查 mvnw.cmd 是否存在
+# Check if mvnw.cmd exists
 if (-not (Test-Path "mvnw.cmd")) {
-    Write-Host "❌ 错误：找不到 mvnw.cmd 文件" -ForegroundColor Red
+    Write-Host "ERROR: mvnw.cmd not found" -ForegroundColor Red
     Pop-Location
     exit 1
 }
 
-# 构建项目
-Write-Host "🔨 运行 Maven 构建..." -ForegroundColor Yellow
+# Build project
+Write-Host "Running Maven build..." -ForegroundColor Yellow
 & .\mvnw.cmd clean package -DskipTests
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Maven 构建失败" -ForegroundColor Red
+    Write-Host "ERROR: Maven build failed" -ForegroundColor Red
     Pop-Location
     exit 1
 }
 
-# 检查 JAR 文件是否生成
+# Check if JAR file was generated
 if (-not (Test-Path "target\backend-0.0.1-SNAPSHOT.jar")) {
-    Write-Host "❌ 错误：JAR 文件未生成" -ForegroundColor Red
+    Write-Host "ERROR: JAR file not generated" -ForegroundColor Red
     Pop-Location
     exit 1
 }
 
 $jarSize = (Get-Item "target\backend-0.0.1-SNAPSHOT.jar").Length / 1MB
-Write-Host "✅ 后端构建成功！(JAR 大小: $([math]::Round($jarSize, 2)) MB)" -ForegroundColor Green
+Write-Host "SUCCESS: Backend built successfully! (JAR size: $([math]::Round($jarSize, 2)) MB)" -ForegroundColor Green
 Pop-Location
 
-# 2. 检查 Docker 是否运行
+# Step 2: Check Docker
 Write-Host ""
-Write-Host "🐳 步骤 2/3: 检查 Docker 环境..." -ForegroundColor Yellow
+Write-Host "Step 2/3: Checking Docker environment..." -ForegroundColor Yellow
 try {
     docker info | Out-Null
-    Write-Host "✅ Docker 正在运行" -ForegroundColor Green
+    Write-Host "SUCCESS: Docker is running" -ForegroundColor Green
 } catch {
-    Write-Host "❌ 错误：Docker 未运行，请先启动 Docker Desktop" -ForegroundColor Red
+    Write-Host "ERROR: Docker is not running, please start Docker Desktop first" -ForegroundColor Red
     exit 1
 }
 
-# 3. 检查 .env 文件
+# Step 3: Check .env file
 if (-not (Test-Path ".env")) {
     Write-Host ""
-    Write-Host "⚠️  警告：未找到 .env 文件" -ForegroundColor Yellow
+    Write-Host "WARNING: .env file not found" -ForegroundColor Yellow
     if (Test-Path "env.example") {
-        Write-Host "📝 正在从模板创建 .env 文件..." -ForegroundColor Yellow
+        Write-Host "Creating .env file from template..." -ForegroundColor Yellow
         Copy-Item "env.example" ".env"
-        Write-Host "✅ .env 文件已创建，请编辑它并设置 MYSQL_ROOT_PASSWORD" -ForegroundColor Yellow
+        Write-Host "SUCCESS: .env file created, please edit it and set MYSQL_ROOT_PASSWORD" -ForegroundColor Yellow
     } else {
-        Write-Host "❌ 错误：找不到 env.example 模板文件" -ForegroundColor Red
+        Write-Host "ERROR: env.example template file not found" -ForegroundColor Red
         exit 1
     }
 }
 
-# 4. 启动 Docker Compose
+# Step 4: Start Docker Compose
 Write-Host ""
-Write-Host "🚀 步骤 3/3: 启动 Docker Compose 服务..." -ForegroundColor Yellow
+Write-Host "Step 3/3: Starting Docker Compose services..." -ForegroundColor Yellow
 docker compose up -d
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Docker Compose 启动失败" -ForegroundColor Red
+    Write-Host "ERROR: Docker Compose startup failed" -ForegroundColor Red
     exit 1
 }
 
 Write-Host ""
-Write-Host "✅ 构建和启动完成！" -ForegroundColor Green
+Write-Host "SUCCESS: Build and startup completed!" -ForegroundColor Green
 Write-Host ""
-Write-Host "📊 服务状态：" -ForegroundColor Cyan
+Write-Host "Service Status:" -ForegroundColor Cyan
 docker compose ps
 Write-Host ""
-Write-Host "📝 查看日志：" -ForegroundColor Cyan
-Write-Host "   - 后端日志: docker compose logs -f backend" -ForegroundColor White
-Write-Host "   - 前端日志: docker compose logs -f frontend" -ForegroundColor White
-Write-Host "   - 所有日志: docker compose logs -f" -ForegroundColor White
+Write-Host "View Logs:" -ForegroundColor Cyan
+Write-Host "   - Backend: docker compose logs -f backend" -ForegroundColor White
+Write-Host "   - Frontend: docker compose logs -f frontend" -ForegroundColor White
+Write-Host "   - All: docker compose logs -f" -ForegroundColor White
 Write-Host ""
-Write-Host "🌐 服务地址：" -ForegroundColor Cyan
-Write-Host "   - 前端: http://localhost:3000" -ForegroundColor White
-Write-Host "   - 后端: http://localhost:8080" -ForegroundColor White
+Write-Host "Service URLs:" -ForegroundColor Cyan
+Write-Host "   - Frontend: http://localhost:3000" -ForegroundColor White
+Write-Host "   - Backend: http://localhost:8080" -ForegroundColor White
 Write-Host ""
-Write-Host "🛑 停止服务: docker compose down" -ForegroundColor Yellow
-Write-Host "🔄 重启服务: docker compose restart" -ForegroundColor Yellow
+Write-Host "Stop services: docker compose down" -ForegroundColor Yellow
+Write-Host "Restart services: docker compose restart" -ForegroundColor Yellow
 

@@ -1,87 +1,106 @@
 #!/bin/bash
 
-# HealthMate 项目构建脚本
-# 用途：首次下载或解压项目后，使用此脚本构建后端并启动服务
+# HealthMate Project Build Script
+# Purpose: Build backend and start Docker services
 
-set -e  # 遇到错误立即退出
+set -e  # Exit on error
 
-echo "🚀 开始构建 HealthMate 项目..."
+echo "========================================"
+echo "HealthMate Project Build Script"
+echo "========================================"
 echo ""
 
-# 检查是否在项目根目录
+# Check if in project root
 if [ ! -f "docker-compose.yml" ]; then
-    echo "❌ 错误：请在项目根目录运行此脚本"
+    echo "ERROR: Please run this script from project root directory"
     exit 1
 fi
 
-# 1. 进入后端目录并构建
-echo "📦 步骤 1/3: 构建后端 JAR 文件..."
+# Step 1: Build backend JAR
+echo "Step 1/3: Building backend JAR file..."
 cd backend
 
-# 检查 mvnw 是否存在
+# Check if mvnw exists
 if [ ! -f "mvnw" ]; then
-    echo "❌ 错误：找不到 mvnw 文件"
+    echo "ERROR: mvnw not found"
     exit 1
 fi
 
-# 添加执行权限（如果需要）
+# Add execute permission if needed
 if [ ! -x "mvnw" ]; then
-    echo "🔧 为 Maven Wrapper 添加执行权限..."
+    echo "Adding execute permission to Maven Wrapper..."
     chmod +x mvnw
 fi
 
-# 构建项目
-echo "🔨 运行 Maven 构建..."
+# Build project
+echo "Running Maven build..."
 ./mvnw clean package -DskipTests
 
 if [ $? -ne 0 ]; then
-    echo "❌ Maven 构建失败"
+    echo "ERROR: Maven build failed"
     exit 1
 fi
 
-# 检查 JAR 文件是否生成
+# Check if JAR file was generated
 if [ ! -f "target/backend-0.0.1-SNAPSHOT.jar" ]; then
-    echo "❌ 错误：JAR 文件未生成"
+    echo "ERROR: JAR file not generated"
     exit 1
 fi
 
-echo "✅ 后端构建成功！"
+echo "SUCCESS: Backend built successfully!"
 cd ..
 
-# 2. 检查 Docker 是否运行
+# Step 2: Check Docker
 echo ""
-echo "🐳 步骤 2/3: 检查 Docker 环境..."
+echo "Step 2/3: Checking Docker environment..."
 if ! docker info > /dev/null 2>&1; then
-    echo "❌ 错误：Docker 未运行，请先启动 Docker Desktop"
+    echo "ERROR: Docker is not running, please start Docker Desktop first"
     exit 1
 fi
-echo "✅ Docker 正在运行"
+echo "SUCCESS: Docker is running"
 
-# 3. 启动 Docker Compose
+# Step 3: Check .env file
+if [ ! -f ".env" ]; then
+    echo ""
+    echo "WARNING: .env file not found"
+    if [ -f "env.example" ]; then
+        echo "Creating .env file from template..."
+        cp env.example .env
+        echo "SUCCESS: .env file created, please edit it and set MYSQL_ROOT_PASSWORD"
+    else
+        echo "ERROR: env.example template file not found"
+        exit 1
+    fi
+fi
+
+# Step 4: Start Docker Compose
 echo ""
-echo "🚀 步骤 3/3: 启动 Docker Compose 服务..."
+echo "Step 3/3: Starting Docker Compose services..."
 docker compose up -d
 
 if [ $? -ne 0 ]; then
-    echo "❌ Docker Compose 启动失败"
+    echo "ERROR: Docker Compose startup failed"
     exit 1
 fi
 
 echo ""
-echo "✅ 构建和启动完成！"
+echo "========================================"
+echo "SUCCESS: Build and startup completed!"
+echo "========================================"
 echo ""
-echo "📊 服务状态："
+echo "Service Status:"
 docker compose ps
 echo ""
-echo "📝 查看日志："
-echo "   - 后端日志: docker compose logs -f backend"
-echo "   - 前端日志: docker compose logs -f frontend"
-echo "   - 所有日志: docker compose logs -f"
+echo "View Logs:"
+echo "   - Backend: docker compose logs -f backend"
+echo "   - Frontend: docker compose logs -f frontend"
+echo "   - All: docker compose logs -f"
 echo ""
-echo "🌐 服务地址："
-echo "   - 前端: http://localhost:3000"
-echo "   - 后端: http://localhost:8080"
+echo "Service URLs:"
+echo "   - Frontend: http://localhost:3000"
+echo "   - Backend: http://localhost:8080"
 echo ""
-echo "🛑 停止服务: docker compose down"
-echo "🔄 重启服务: docker compose restart"
+echo "Stop services: docker compose down"
+echo "Restart services: docker compose restart"
+
 

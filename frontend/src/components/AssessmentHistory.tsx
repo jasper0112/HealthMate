@@ -24,9 +24,11 @@ function useClientPaging<T>(all: T[], pageSize: number) {
 type Props = {
   /** When false, the internal <h3> "Report History" is not rendered. */
   showInternalTitle?: boolean;
+  /** User ID to fetch assessments for */
+  userId: number;
 };
 
-export default function AssessmentHistory({ showInternalTitle = true }: Props) {
+export default function AssessmentHistory({ showInternalTitle = true, userId }: Props) {
   const [all, setAll] = useState<HealthAssessmentResponse[]>([]);
   const [sel, setSel] = useState<HealthAssessmentResponse[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -34,7 +36,7 @@ export default function AssessmentHistory({ showInternalTitle = true }: Props) {
 
   async function load() {
     setErr(null);
-    const res = await listAssessmentsByUser();
+    const res = await listAssessmentsByUser(userId);
     // Sort newest first to match the rest of the page.
     res.sort(
       (a, b) =>
@@ -44,7 +46,7 @@ export default function AssessmentHistory({ showInternalTitle = true }: Props) {
   }
   useEffect(() => {
     load();
-  }, []);
+  }, [userId]);
 
   const { page, setPage, totalPages, slice } = useClientPaging(all, PAGE_SIZE);
 

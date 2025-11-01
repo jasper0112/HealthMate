@@ -44,38 +44,7 @@ export interface HealthAssessmentResponse {
 
 // src/lib/types.ts
 
-export type MedicationGuidance = {
-  medGuidanceId?: number;
-  userId?: number;
-  username?: string | null;
-  symptoms?: string | null;
-  conditionDescription?: string | null;
-  otcMedications?: string | null;
-  usageInstructions?: string | null;
-  precautions?: string | null;
-  sideEffects?: string | null;
-  recommendedPharmacies?: string | null;
-  priceComparison?: string | null;
-  guidance?: string | null;
-  createdAt?: string | null;
-};
 
-
-export type MedicationGuidance = {
-  medGuidanceId?: number;
-  userId?: number;
-  username?: string | null;
-  symptoms?: string | null;
-  conditionDescription?: string | null;
-  otcMedications?: string | null;
-  usageInstructions?: string | null;
-  precautions?: string | null;
-  sideEffects?: string | null;
-  recommendedPharmacies?: string | null;
-  priceComparison?: string | null;
-  guidance?: string | null;
-  createdAt?: string | null;
-};
 export type MedicationGuidance = {
   medGuidanceId?: number;
   userId?: number;

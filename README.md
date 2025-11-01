@@ -84,25 +84,109 @@ HealthMate is not only for medical situations—it is a lifelong health partner 
 
 ---
 
-## 🧾 File Structure Example
+## 🛠️ Tech Stack
+
+### Backend
+- **Framework**: Spring Boot 3.5.6
+- **Language**: Java 17
+- **ORM**: Spring Data JPA / Hibernate
+- **Security**: Spring Security
+- **Build Tool**: Maven
+- **AI Integration**: Google Gemini API
+
+### Frontend
+- **Framework**: Next.js 15.5.6 (React 19.1.0)
+- **Language**: TypeScript 5
+- **Styling**: Tailwind CSS 4
+- **Export**: html2canvas, jsPDF (for PDF/Image export)
+
+### Database
+- **RDBMS**: MySQL 8.0
+
+### Deployment
+- **Containerization**: Docker & Docker Compose
+- **Runtime**: 
+  - Backend: Eclipse Temurin JRE 17
+  - Frontend: Node.js 20
+
+---
+
+## 🧾 Project Structure
+
 ```
 HealthMate/
 │
-├── docs/
-│   ├── README.md
-│   ├── Requirements/
-│   ├── Architecture/
-│   ├── UML_Diagrams/
-│   └── Presentation/
+├── backend/                          # Spring Boot Backend
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/example/backend/
+│   │   │   │   ├── config/          # Configuration (Security, Gemini)
+│   │   │   │   ├── controller/     # REST Controllers (13 APIs)
+│   │   │   │   ├── dto/            # Data Transfer Objects (46 DTOs)
+│   │   │   │   ├── entity/         # JPA Entities (13 entities)
+│   │   │   │   ├── repository/     # JPA Repositories (13 repos)
+│   │   │   │   ├── service/        # Business Logic (18 services)
+│   │   │   │   └── BackendApplication.java
+│   │   │   └── resources/
+│   │   │       ├── application.yml # Spring configuration
+│   │   │       └── application.properties
+│   │   └── test/                    # Unit tests
+│   ├── pom.xml                      # Maven dependencies
+│   └── mvnw, mvnw.cmd              # Maven Wrapper
 │
-├── src/
-│   ├── frontend/
-│   ├── backend/
-│   └── llm_agent/
+├── frontend/                        # Next.js Frontend
+│   ├── src/
+│   │   ├── app/                     # Next.js App Router
+│   │   │   ├── page.tsx            # Home page
+│   │   │   ├── login/              # Login page
+│   │   │   ├── register/           # Registration page
+│   │   │   ├── dashboard/          # Dashboard
+│   │   │   ├── assessment/         # Health Assessment
+│   │   │   ├── record/             # Health Data Record
+│   │   │   ├── health-plans/       # Health Plans
+│   │   │   ├── diet-guidance/      # Diet Guidance
+│   │   │   ├── profile/            # User Profile
+│   │   │   └── admin/              # Admin panel
+│   │   ├── components/             # React Components
+│   │   │   ├── AssessmentHistory.tsx
+│   │   │   ├── AssessmentSummary.tsx
+│   │   │   ├── DataRecordForm.tsx
+│   │   │   └── ...
+│   │   ├── lib/                    # Utilities
+│   │   │   ├── api.ts             # API client
+│   │   │   ├── types.ts           # TypeScript types
+│   │   │   ├── auth.ts            # Authentication
+│   │   │   ├── csv.ts             # CSV export
+│   │   │   └── pdf.ts             # PDF export
+│   │   └── styles/                 # CSS files
+│   ├── public/                     # Static assets
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── next.config.ts
+│   └── Dockerfile                  # Frontend Docker image
 │
-├── tests/
-└── LICENSE
+├── build.sh                         # Build script (Linux/macOS)
+├── build.ps1                       # Build script (Windows PowerShell)
+├── build.cmd                        # Build script (Windows CMD)
+├── docker-compose.yml               # Docker Compose configuration
+├── env.example                      # Environment variables template
+├── api-tests.http                   # HTTP API test file (IntelliJ/Rider)
+├── HealthMate-API.postman_collection.json  # Postman collection
+└── README.md                        # This file
 ```
+
+### Key Directories
+
+- **`backend/src/main/java/com/example/backend/`**: Main backend source code
+  - `controller/`: REST API endpoints (13 controllers)
+  - `service/`: Business logic layer (18 services)
+  - `entity/`: Database entities (13 entities)
+  - `repository/`: Data access layer (13 repositories)
+  - `dto/`: Request/Response DTOs (46 DTOs)
+
+- **`frontend/src/app/`**: Next.js pages (App Router)
+- **`frontend/src/components/`**: Reusable React components
+- **`frontend/src/lib/`**: Utility functions and API client
 
 ---
 
@@ -114,6 +198,26 @@ HealthMate/
 - **Java 17+** (for building backend locally)
 - **Maven** (or Maven Wrapper included in project)
 - **Node.js 20+** (optional, for local frontend development)
+
+### Environment Configuration
+
+1. **Create `.env` file** (if using local MySQL):
+   ```bash
+   cp env.example .env
+   ```
+   
+2. **Edit `.env`** and set:
+   ```env
+   MYSQL_ROOT_PASSWORD=your_secure_password
+   ```
+   
+   > **Note**: The backend is currently configured to use a cloud MySQL database.  
+   > If you want to use local MySQL, update `SPRING_DATASOURCE_URL` in `docker-compose.yml`.
+
+### API Testing
+
+- **HTTP Client**: Use `api-tests.http` file (IntelliJ IDEA / JetBrains Rider)
+- **Postman**: Import `HealthMate-API.postman_collection.json`
 
 ### First-Time Setup
 
@@ -256,6 +360,31 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 - Verify backend is running: `docker compose logs backend`
 - Check `NEXT_PUBLIC_API_BASE_URL` environment variable
 - Ensure both services are up: `docker compose ps`
+
+#### Issue: Backend cannot connect to database
+
+**Solution**:
+- Verify database connection string in `docker-compose.yml` (`SPRING_DATASOURCE_URL`)
+- Check database credentials in `docker-compose.yml`
+- For cloud database: Ensure network connectivity and firewall rules
+- For local MySQL: Ensure MySQL container is healthy: `docker compose ps mysql`
+
+---
+
+## 📚 Additional Resources
+
+### API Documentation
+- Import `HealthMate-API.postman_collection.json` into Postman for API testing
+- Use `api-tests.http` for HTTP client testing in IntelliJ/Rider
+
+### Development
+- Backend API base URL: `http://localhost:8080/api`
+- Frontend dev server: `http://localhost:3000`
+- Backend Spring Boot admin: Check logs for startup information
+
+### Database
+- MySQL port (if using local): `3307` (mapped to container port `3306`)
+- Database name: `5620` (configured in docker-compose.yml)
 
 ---
 

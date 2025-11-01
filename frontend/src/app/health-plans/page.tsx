@@ -42,7 +42,7 @@ export default function HealthPlansPage() {
       return;
     }
     setUserId(u.userId);
-    // load latest and history
+    // Load latest and history
     latestHealthPlanByUser(u.userId).then(setPreview).catch(() => {});
     loadHistory(u.userId, "ALL");
   }, [router]);
@@ -57,7 +57,7 @@ export default function HealthPlansPage() {
           : await listHealthPlansByType(uid, type);
       setHistory(list);
     } catch (e: any) {
-      setError(e?.message || "加载历史计划失败");
+      setError(e?.message || "Failed to load history plans");
     } finally {
       setLoadingHistory(false);
     }
@@ -80,7 +80,7 @@ export default function HealthPlansPage() {
       setPreview(plan);
       await loadHistory(userId, filterType);
     } catch (e: any) {
-      setError(e?.message || "生成失败");
+      setError(e?.message || "Generation failed");
     } finally {
       setGenerating(false);
     }
@@ -111,16 +111,16 @@ export default function HealthPlansPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-4">
-      {/* 表单 */}
+      {/* Form */}
       <div className="card scale-in">
-        <h3>生成计划</h3>
+        <h3>Generate Plan</h3>
         <form className="row" style={{ gridTemplateColumns: "repeat(2, minmax(230px, 1fr))" }} onSubmit={(e) => { e.preventDefault(); }}>
             <div>
-              <label>用户ID</label>
+              <label>User ID</label>
               <input disabled value={userId ?? ""} type="text" />
             </div>
             <div>
-              <label>计划类型</label>
+              <label>Plan Type</label>
               <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as HealthPlanType })} style={{ width: "100%", marginTop: "6px", padding: "11px 12px", border: "1px solid var(--border)", borderRadius: "12px", background: "#fff", fontSize: "15px" }}>
                 <option value="DAILY">DAILY</option>
                 <option value="WEEKLY">WEEKLY</option>
@@ -128,36 +128,36 @@ export default function HealthPlansPage() {
               </select>
             </div>
             <div>
-              <label>结束日期</label>
+              <label>End Date</label>
               <input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />
             </div>
             <div>
-              <label>开始日期</label>
+              <label>Start Date</label>
               <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
             </div>
             <div>
-              <label>daysBack（可选）</label>
+              <label>Days Back (Optional)</label>
               <input type="number" min={0} value={form.daysBack} onChange={(e) => setForm({ ...form, daysBack: Number(e.target.value) })} />
             </div>
             <div>
-              <label>健康目标</label>
-              <input type="text" value={form.healthGoals} onChange={(e) => setForm({ ...form, healthGoals: e.target.value })} placeholder="如：减脂、改善睡眠" />
+              <label>Health Goals</label>
+              <input type="text" value={form.healthGoals} onChange={(e) => setForm({ ...form, healthGoals: e.target.value })} placeholder="e.g., Weight loss, Improve sleep" />
             </div>
             <div>
-              <label>饮食偏好（可选）</label>
-              <input type="text" value={form.dietPreference} onChange={(e) => setForm({ ...form, dietPreference: e.target.value })} placeholder="低糖/高蛋白/素食..." />
+              <label>Diet Preference (Optional)</label>
+              <input type="text" value={form.dietPreference} onChange={(e) => setForm({ ...form, dietPreference: e.target.value })} placeholder="Low sugar/High protein/Vegetarian..." />
             </div>
             <div>
-              <label>不吃/过敏（可选）</label>
-              <input type="text" value={form.allergies} onChange={(e) => setForm({ ...form, allergies: e.target.value })} placeholder="花生过敏/乳糖不耐受..." />
+              <label>Allergies/Contraindications (Optional)</label>
+              <input type="text" value={form.allergies} onChange={(e) => setForm({ ...form, allergies: e.target.value })} placeholder="Peanut allergy/Lactose intolerant..." />
             </div>
             <div>
-              <label>活动水平（可选）</label>
-              <input type="text" value={form.activityLevel} onChange={(e) => setForm({ ...form, activityLevel: e.target.value })} placeholder="久坐/中等/高强度" />
+              <label>Activity Level (Optional)</label>
+              <input type="text" value={form.activityLevel} onChange={(e) => setForm({ ...form, activityLevel: e.target.value })} placeholder="Sedentary/Moderate/High intensity" />
             </div>
             <div className="actions" style={{ gridColumn: "1 / -1", marginTop: 4 }}>
               <button type="button" onClick={onGenerate} disabled={generating} className="btn btn-primary">
-                {generating ? "生成中..." : "Generate with AI"}
+                {generating ? "Generating..." : "Generate with AI"}
               </button>
               {error && <span className="badge" style={{ background: "#fee2e2", color: "#dc2626" }}>{error}</span>}
             </div>
@@ -166,7 +166,7 @@ export default function HealthPlansPage() {
 
       <div className="card scale-in">
           <div className="flex items-center justify-between mb-2">
-            <h3>计划预览</h3>
+            <h3>Plan Preview</h3>
             <div className="flex gap-2">
               <button 
                 onClick={onLoadLatest} 
@@ -183,7 +183,7 @@ export default function HealthPlansPage() {
                   borderColor: "#1e40af",
                 }}
               >
-                最新
+                Latest
               </button>
               <button 
                 onClick={onLoadActive} 
@@ -200,38 +200,38 @@ export default function HealthPlansPage() {
                   borderColor: "#1e40af",
                 }}
               >
-                当前生效
+                Active
               </button>
             </div>
           </div>
           {preview ? (
             <PlanPreview plan={preview} />
           ) : (
-            <p className="text-sm text-gray-600">暂无可预览的计划</p>
+            <p className="text-sm text-gray-600">No plan available for preview</p>
           )}
         </div>
 
-        {/* 历史计划表格 */}
+        {/* History Plans Table */}
         <div className="card">
-          <h3>历史计划</h3>
+          <h3>History Plans</h3>
           <div className="flex items-center justify-between mb-2">
             <select value={filterType} onChange={async (e) => { const t = e.target.value as any; setFilterType(t); if (userId!=null) await loadHistory(userId, t); }} style={{ width: "100%", marginTop: "6px", padding: "11px 12px", border: "1px solid var(--border)", borderRadius: "12px", background: "#fff", fontSize: "15px" }}>
-              <option value="ALL">全部</option>
+              <option value="ALL">All</option>
               <option value="DAILY">DAILY</option>
               <option value="WEEKLY">WEEKLY</option>
               <option value="MONTHLY">MONTHLY</option>
             </select>
           </div>
           {loadingHistory ? (
-            <div className="text-sm text-gray-600" style={{ marginTop: 12 }}>加载中...</div>
+            <div className="text-sm text-gray-600" style={{ marginTop: 12 }}>Loading...</div>
           ) : (
             <div style={{ marginTop: 12, overflowX: "auto" }}>
               <table className="table">
                 <thead>
                   <tr>
                     <th>ID</th>
-                    <th>类型</th>
-                    <th>创建日期</th>
+                    <th>Type</th>
+                    <th>Created Date</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -239,7 +239,7 @@ export default function HealthPlansPage() {
                   {history.length === 0 ? (
                     <tr>
                       <td colSpan={4} style={{ color: "var(--muted)" }}>
-                        暂无记录
+                        No records
                       </td>
                     </tr>
                   ) : (
@@ -254,13 +254,13 @@ export default function HealthPlansPage() {
                             onClick={() => setPreview(p)}
                             style={{ marginRight: 4 }}
                           >
-                            查看
+                            View
                           </button>
                           <button
                             className="btn btn-danger"
                             onClick={() => onDelete(p.id)}
                           >
-                            删除
+                            Delete
                           </button>
                         </td>
                       </tr>
@@ -272,7 +272,7 @@ export default function HealthPlansPage() {
           )}
         </div>
 
-      {/* 删除确认弹窗 */}
+      {/* Delete Confirmation Dialog */}
       {showDeleteConfirm != null && (
         <div
           onClick={() => setShowDeleteConfirm(null)}
@@ -302,8 +302,8 @@ export default function HealthPlansPage() {
               margin: "auto",
             }}
           >
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>确认删除</h3>
-            <p style={{ fontSize: 14, color: "#4B5563", marginBottom: 16 }}>确定要删除此计划吗？此操作不可撤销。</p>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Confirm Delete</h3>
+            <p style={{ fontSize: 14, color: "#4B5563", marginBottom: 16 }}>Are you sure you want to delete this plan? This action cannot be undone.</p>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
               <button
                 onClick={() => setShowDeleteConfirm(null)}
@@ -316,7 +316,7 @@ export default function HealthPlansPage() {
                   cursor: "pointer",
                 }}
               >
-                取消
+                Cancel
               </button>
               <button
                 onClick={handleConfirmDelete}
@@ -330,7 +330,7 @@ export default function HealthPlansPage() {
                   cursor: "pointer",
                 }}
               >
-                确认删除
+                Confirm Delete
               </button>
             </div>
           </div>
@@ -376,21 +376,21 @@ function TextBlock({ text }: { text?: string | null }) {
 function PlanPreview({ plan }: { plan: any }) {
   return (
     <div className="space-y-3">
-      <div className="text-sm text-gray-600">ID #{plan.id} • 类型 {plan.type} • {formatDate(plan.createdAt)}</div>
-      <Section title="计划摘要"><TextBlock text={plan.planSummary || plan.summary} /></Section>
-      <Section title="饮食策略"><TextBlock text={plan.dietOverview || plan.foodRecommendations} /></Section>
-      <Section title="营养目标"><TextBlock text={plan.nutritionGoals} /></Section>
-      <Section title="每日餐单示例"><TextBlock text={plan.dailyMealPlan} /></Section>
-      <Section title="运动策略"><TextBlock text={plan.exerciseOverview || plan.weeklyWorkoutPlan} /></Section>
-      <Section title="健身目标"><TextBlock text={plan.fitnessGoals} /></Section>
-      <Section title="运动建议"><TextBlock text={plan.exerciseRecommendations} /></Section>
-      <Section title="生活方式"><TextBlock text={plan.lifestyleOverview || plan.dailyRoutine} /></Section>
-      <Section title="睡眠建议"><TextBlock text={plan.sleepRecommendations} /></Section>
-      <Section title="压力管理"><TextBlock text={plan.stressManagementTips} /></Section>
-      <Section title="补水建议"><TextBlock text={plan.hydrationGoals} /></Section>
-      <Section title="长期目标"><TextBlock text={plan.longTermGoals} /></Section>
-      <Section title="进度跟踪"><TextBlock text={plan.progressTrackingTips} /></Section>
-      <Section title="激励语"><TextBlock text={plan.motivationalNotes} /></Section>
+      <div className="text-sm text-gray-600">ID #{plan.id} • Type {plan.type} • {formatDate(plan.createdAt)}</div>
+      <Section title="Plan Summary"><TextBlock text={plan.planSummary || plan.summary} /></Section>
+      <Section title="Diet Strategy"><TextBlock text={plan.dietOverview || plan.foodRecommendations} /></Section>
+      <Section title="Nutrition Goals"><TextBlock text={plan.nutritionGoals} /></Section>
+      <Section title="Daily Meal Plan Example"><TextBlock text={plan.dailyMealPlan} /></Section>
+      <Section title="Exercise Strategy"><TextBlock text={plan.exerciseOverview || plan.weeklyWorkoutPlan} /></Section>
+      <Section title="Fitness Goals"><TextBlock text={plan.fitnessGoals} /></Section>
+      <Section title="Exercise Recommendations"><TextBlock text={plan.exerciseRecommendations} /></Section>
+      <Section title="Lifestyle"><TextBlock text={plan.lifestyleOverview || plan.dailyRoutine} /></Section>
+      <Section title="Sleep Recommendations"><TextBlock text={plan.sleepRecommendations} /></Section>
+      <Section title="Stress Management"><TextBlock text={plan.stressManagementTips} /></Section>
+      <Section title="Hydration Goals"><TextBlock text={plan.hydrationGoals} /></Section>
+      <Section title="Long-term Goals"><TextBlock text={plan.longTermGoals} /></Section>
+      <Section title="Progress Tracking"><TextBlock text={plan.progressTrackingTips} /></Section>
+      <Section title="Motivational Notes"><TextBlock text={plan.motivationalNotes} /></Section>
     </div>
   );
 }

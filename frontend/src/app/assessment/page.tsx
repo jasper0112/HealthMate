@@ -57,6 +57,7 @@ export default function AssessmentPage() {
       type: latestReport.type ?? "GENERAL",
       overallScore: latestReport.overallScore ?? "",
       summary: latestReport.summary ?? "",
+      detailed: cleanDetailed(latestReport.detailedReport),
     }];
   }, [latestReport]);
 

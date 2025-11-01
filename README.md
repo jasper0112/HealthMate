@@ -104,5 +104,93 @@ HealthMate/
 └── LICENSE
 ```
 
+---
 
+## 🚀 快速开始 (Quick Start)
+
+### 首次下载/解压后的构建步骤
+
+如果你刚刚从 GitHub 下载并解压了这个项目，请按照以下步骤操作：
+
+#### 方法一：使用构建脚本（推荐）✨
+
+```bash
+# 1. 为构建脚本添加执行权限
+chmod +x build.sh
+
+# 2. 运行构建脚本（会自动构建后端并启动 Docker）
+./build.sh
+```
+
+构建脚本会自动完成：
+- ✅ 构建后端 JAR 文件
+- ✅ 检查 Docker 环境
+- ✅ 启动所有 Docker 服务
+
+#### 方法二：手动构建步骤
+
+如果你更喜欢手动操作，按以下步骤：
+
+```bash
+# 1. 进入后端目录
+cd backend
+
+# 2. 为 Maven Wrapper 添加执行权限
+chmod +x mvnw
+
+# 3. 构建 Maven 项目（生成 JAR 文件）
+./mvnw clean package -DskipTests
+
+# 4. 返回项目根目录
+cd ..
+
+# 5. 启动 Docker Compose 服务
+docker compose up -d
+```
+
+#### 验证服务是否正常运行
+
+```bash
+# 查看所有服务状态
+docker compose ps
+
+# 查看后端日志（确认是否启动成功）
+docker compose logs backend --tail 50
+
+# 应该看到类似 "Started BackendApplication" 的日志
+```
+
+#### 访问服务
+
+- **前端应用**: http://localhost:3000
+- **后端 API**: http://localhost:8080
+
+#### 常用命令
+
+```bash
+# 停止所有服务
+docker compose down
+
+# 重启所有服务
+docker compose restart
+
+# 查看实时日志
+docker compose logs -f
+
+# 只查看后端日志
+docker compose logs -f backend
+
+# 停止并删除所有容器和网络
+docker compose down -v
+```
+
+#### 常见问题
+
+**问题**: Docker 容器显示 "Restarting" 状态或报错 "Invalid or corrupt jarfile"
+
+**原因**: 没有先构建后端 JAR 文件就启动了 Docker
+
+**解决**: 按照上面的步骤先构建后端，然后再启动 Docker
+
+---
 

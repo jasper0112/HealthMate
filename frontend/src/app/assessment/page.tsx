@@ -29,7 +29,7 @@ export default function AssessmentPage() {
   // Trigger assessment WITHOUT the "lastOnly" flag
   async function handleGenerateReport() {
     if (!userId) {
-      setError("请先登录");
+      setError("Please login first");
       return;
     }
     setLoading(true);
@@ -83,6 +83,14 @@ export default function AssessmentPage() {
       ${el.innerHTML}
     `;
     printHTML(html, "Assessment Report");
+  }
+
+  function cleanDetailed(text: string | undefined): string {
+  if (!text) return "-";
+  return text
+    .replace(/^#{1,6}\s.*$/gm, "") // remove headings like "#", "##"
+    .replace(/\n{2,}/g, "\n") // collapse multiple blank lines
+    .trim();
   }
 
   return (
@@ -139,6 +147,15 @@ export default function AssessmentPage() {
             <p>
               <strong>Summary:</strong>{" "}
               {latestReport.summary ?? "-"}
+            </p>
+            <p>
+              <strong>Detailed:</strong>{" "}
+              <span
+                style={{ whiteSpace: "pre-wrap" }}
+                dangerouslySetInnerHTML={{
+                  __html: cleanDetailed(latestReport.detailedReport).replace(/\n/g, "<br/>")
+                }}
+              />
             </p>
           </div>
         ) : (

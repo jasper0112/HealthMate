@@ -32,6 +32,9 @@ export default function DashboardPage() {
         <ModuleCard title="AI Diet Guidance" desc="AI recipe recommendations, nutrition advice, and precautions">
           <Link className="underline" href="/diet-guidance">Enter Diet Module</Link>
         </ModuleCard>
+        <ModuleCard title="OTC Medication Guidance" desc="AI-powered over-the-counter medication recommendations and nearby pharmacy locations">
+          <Link className="underline" href="/otc">Enter OTC Module</Link>
+        </ModuleCard>
       </div>
     </div>
   );

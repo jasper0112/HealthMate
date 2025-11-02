@@ -78,6 +78,8 @@ export default function LoginPage() {
                 // Redirect immediately
                 if (resp.role === "ADMIN") {
                   router.push("/admin");
+                } else if (resp.role === "USER") {
+                  router.push("/dashboard");
                 } else {
                   router.push("/dashboard");
                 }

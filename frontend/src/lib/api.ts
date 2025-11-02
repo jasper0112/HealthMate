@@ -6,6 +6,15 @@ import {
   HealthDataCreateRequest,
   HealthDataResponse,
   HealthAssessmentResponse,
+  SmartTriageRequest,
+  SmartTriageResponse,
+  GpAppointmentRequest,
+  GpAppointmentResponse,
+  InsuranceRecommendationRequest,
+  InsuranceRecommendationResponse,
+  RewardSystemResponse,
+  FacilityResponse,
+  FacilityType,
 } from "./types";
 import type { MedicationGuidance } from "./types";
 
@@ -21,6 +30,11 @@ export const PATH = {
   plans: "/api/health-plans",
   diet: "/api/diet-guidance",
   medication: "/api/medication-guidance",
+  triage: "/api/smart-triage",
+  appointments: "/api/gp-appointments",
+  insurance: "/api/insurance-recommendations",
+  rewards: "/api/rewards",
+  facilities: "/api/facilities",
 };
 
 const USER_ID = Number(process.env.NEXT_PUBLIC_USER_ID ?? 1);
@@ -508,5 +522,141 @@ export async function deleteMedicationGuidance(id: number): Promise<boolean> {
   return true;
 }
 
-// ✅ 给组件用的别名（防止“没有导出的成员 getMedicationGuidanceById”）
+// ✅ 给组件用的别名（防止"没有导出的成员 getMedicationGuidanceById"）
 export { getMedicationGuidance as getMedicationGuidanceById };
+
+/* ---------------- SMART TRIAGE ---------------- */
+
+export async function generateTriage(request: SmartTriageRequest): Promise<SmartTriageResponse> {
+  return postJson(`${BASE}${PATH.triage}`, request);
+}
+
+export async function getTriageById(id: number): Promise<SmartTriageResponse> {
+  const res = await fetch(`${BASE}${PATH.triage}/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load triage");
+  return res.json();
+}
+
+export async function getTriageHistory(userId: number): Promise<SmartTriageResponse[]> {
+  const res = await fetch(`${BASE}${PATH.triage}/user/${userId}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load triage history");
+  return res.json();
+}
+
+export async function getLatestTriage(userId: number): Promise<SmartTriageResponse | null> {
+  const res = await fetch(`${BASE}${PATH.triage}/user/${userId}/latest`, { cache: "no-store" });
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error("Failed to load latest triage");
+  }
+  return res.json();
+}
+
+export async function deleteTriage(id: number): Promise<boolean> {
+  const res = await fetch(`${BASE}${PATH.triage}/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete triage");
+  return true;
+}
+
+/* ---------------- GP APPOINTMENTS ---------------- */
+
+export async function bookGpAppointment(request: GpAppointmentRequest): Promise<GpAppointmentResponse> {
+  return postJson(`${BASE}${PATH.appointments}`, request);
+}
+
+export async function getAppointmentById(id: number): Promise<GpAppointmentResponse> {
+  const res = await fetch(`${BASE}${PATH.appointments}/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load appointment");
+  return res.json();
+}
+
+export async function getUserAppointments(userId: number): Promise<GpAppointmentResponse[]> {
+  const res = await fetch(`${BASE}${PATH.appointments}/user/${userId}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load appointments");
+  return res.json();
+}
+
+export async function cancelAppointment(id: number): Promise<boolean> {
+  const res = await fetch(`${BASE}${PATH.appointments}/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to cancel appointment");
+  return true;
+}
+
+/* ---------------- INSURANCE RECOMMENDATIONS ---------------- */
+
+export async function generateInsuranceRecommendation(
+  request: InsuranceRecommendationRequest
+): Promise<InsuranceRecommendationResponse> {
+  return postJson(`${BASE}${PATH.insurance}`, request);
+}
+
+export async function getUserInsuranceRecommendations(
+  userId: number
+): Promise<InsuranceRecommendationResponse[]> {
+  const res = await fetch(`${BASE}${PATH.insurance}/user/${userId}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load insurance recommendations");
+  return res.json();
+}
+
+export async function getLatestInsuranceRecommendation(
+  userId: number
+): Promise<InsuranceRecommendationResponse | null> {
+  const res = await fetch(`${BASE}${PATH.insurance}/user/${userId}/latest`, { cache: "no-store" });
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error("Failed to load latest insurance recommendation");
+  }
+  return res.json();
+}
+
+/* ---------------- REWARD SYSTEM ---------------- */
+
+export async function dailyCheckIn(userId: number): Promise<RewardSystemResponse> {
+  const res = await fetch(`${BASE}${PATH.rewards}/${userId}/check-in`, { method: "POST" });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Failed to check in");
+  }
+  return res.json();
+}
+
+export async function getUserRewards(userId: number): Promise<RewardSystemResponse | null> {
+  const res = await fetch(`${BASE}${PATH.rewards}/user/${userId}`, { cache: "no-store" });
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error("Failed to load rewards");
+  }
+  return res.json();
+}
+
+export async function recordHealthDataEntry(userId: number): Promise<RewardSystemResponse> {
+  const res = await fetch(`${BASE}${PATH.rewards}/${userId}/health-data`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to record health data entry");
+  return res.json();
+}
+
+export async function recordAssessmentCompletion(userId: number): Promise<RewardSystemResponse> {
+  const res = await fetch(`${BASE}${PATH.rewards}/${userId}/assessment`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to record assessment completion");
+  return res.json();
+}
+
+/* ---------------- FACILITIES ---------------- */
+
+export async function getAllFacilities(): Promise<FacilityResponse[]> {
+  const res = await fetch(`${BASE}${PATH.facilities}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load facilities");
+  return res.json();
+}
+
+export async function getFacilityById(id: number): Promise<FacilityResponse> {
+  const res = await fetch(`${BASE}${PATH.facilities}/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load facility");
+  return res.json();
+}
+
+export async function getFacilitiesByType(type: FacilityType): Promise<FacilityResponse[]> {
+  const res = await fetch(`${BASE}${PATH.facilities}/type/${type}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load facilities");
+  return res.json();
+}

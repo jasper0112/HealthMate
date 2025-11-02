@@ -261,7 +261,7 @@ export default function TopBar() {
                   e.preventDefault();
                   const u = getCurrentUser();
                   if (!u) setShowLoginPrompt(true);
-                  else router.push("/otc"); // ⬅️ 跳到 OTC 页面
+                  else router.push("/otc");
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = "#64748b";
@@ -283,6 +283,90 @@ export default function TopBar() {
                 }}
               >
                 Medication Guidance (OTC)
+              </a>
+              <a
+                onClick={(e) => {
+                  e.preventDefault();
+                  const u = getCurrentUser();
+                  if (!u) setShowLoginPrompt(true);
+                  else router.push("/triage");
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#64748b";
+                  e.currentTarget.style.color = "white";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "inherit";
+                }}
+                href="/triage"
+                style={{
+                  display: "block",
+                  padding: ".5rem .5rem",
+                  borderRadius: 6,
+                  color: "inherit",
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                  transition: "background-color 0.15s ease, color 0.15s ease",
+                }}
+              >
+                Smart Triage & GP
+              </a>
+              <a
+                onClick={(e) => {
+                  e.preventDefault();
+                  const u = getCurrentUser();
+                  if (!u) setShowLoginPrompt(true);
+                  else router.push("/insurance");
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#64748b";
+                  e.currentTarget.style.color = "white";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "inherit";
+                }}
+                href="/insurance"
+                style={{
+                  display: "block",
+                  padding: ".5rem .5rem",
+                  borderRadius: 6,
+                  color: "inherit",
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                  transition: "background-color 0.15s ease, color 0.15s ease",
+                }}
+              >
+                Insurance Recommendations
+              </a>
+              <a
+                onClick={(e) => {
+                  e.preventDefault();
+                  const u = getCurrentUser();
+                  if (!u) setShowLoginPrompt(true);
+                  else router.push("/rewards");
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#64748b";
+                  e.currentTarget.style.color = "white";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "inherit";
+                }}
+                href="/rewards"
+                style={{
+                  display: "block",
+                  padding: ".5rem .5rem",
+                  borderRadius: 6,
+                  color: "inherit",
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                  transition: "background-color 0.15s ease, color 0.15s ease",
+                }}
+              >
+                Rewards & Check-in
               </a>
             </div>
           )}

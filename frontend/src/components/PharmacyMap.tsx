@@ -3,7 +3,6 @@
 import "leaflet/dist/leaflet.css";
 import { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
 
 type Facility = {
   facilityId: number;
@@ -22,14 +21,19 @@ type Props = {
 
 export default function PharmacyMap({ center, facilities, zoom = 13 }: Props) {
   useEffect(() => {
-    const defaultIcon = new L.Icon({
-      iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-      iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-      shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-    });
-    (L.Marker.prototype as any).options.icon = defaultIcon;
+    // 仅在客户端动态导入和配置 leaflet 以避免 SSR 问题
+    if (typeof window !== "undefined") {
+      import("leaflet").then((L) => {
+        const defaultIcon = new L.default.Icon({
+          iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+          iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+          shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+        });
+        (L.default.Marker.prototype as any).options.icon = defaultIcon;
+      });
+    }
   }, []);
 
   return (

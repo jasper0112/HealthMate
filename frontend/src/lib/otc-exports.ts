@@ -1,4 +1,4 @@
-// frontend/src/lib/otc-export.ts
+// frontend/src/lib/otc-exports.ts
 import type { MedicationGuidance } from "./types";
 
 // 兼容导入：不假设具体导出名

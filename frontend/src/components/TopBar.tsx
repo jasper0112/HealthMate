@@ -254,6 +254,36 @@ export default function TopBar() {
               >
                 Diet Guidance
               </a>
+                            {/* ...前面省略（Record / Assessment / Health Plan / Diet Guidance）... */}
+
+              <a
+                onClick={(e) => {
+                  e.preventDefault();
+                  const u = getCurrentUser();
+                  if (!u) setShowLoginPrompt(true);
+                  else router.push("/otc"); // ⬅️ 跳到 OTC 页面
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#64748b";
+                  e.currentTarget.style.color = "white";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "inherit";
+                }}
+                href="/otc"
+                style={{
+                  display: "block",
+                  padding: ".5rem .5rem",
+                  borderRadius: 6,
+                  color: "inherit",
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                  transition: "background-color 0.15s ease, color 0.15s ease",
+                }}
+              >
+                Medication Guidance (OTC)
+              </a>
             </div>
           )}
           </div>

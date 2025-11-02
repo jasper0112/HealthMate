@@ -1,14 +1,14 @@
 // frontend/src/lib/api.ts
 // Centralized API client with consistent BASE/PATH and solid error handling.
-// This version mirrors client field names to server-preferred names on send
-// (height -> heightCm; systolicBp/diastolicBp -> systolicPressure/diastolicPressure).
+// Mirrors client field names to server-preferred names on send.
 
 import {
   HealthDataCreateRequest,
   HealthDataResponse,
   HealthAssessmentResponse,
 } from "./types";
-import type { MedicationGuidance } from "./types";  // ★ 只在这里引入一次
+import type { MedicationGuidance } from "./types";
+
 import { avg, sum, daysAgoISO } from "./utils";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
@@ -20,7 +20,7 @@ export const PATH = {
   users: "/api/users",
   plans: "/api/health-plans",
   diet: "/api/diet-guidance",
-  // 注意：medication-guidance 直接用绝对路径，后面函数里拼接
+  medication: "/api/medication-guidance",
 };
 
 const USER_ID = Number(process.env.NEXT_PUBLIC_USER_ID ?? 1);
@@ -43,6 +43,15 @@ export async function postJson(url: string, body: any) {
     }
   }
   return res.json();
+}
+
+async function del(url: string) {
+  const res = await fetch(url, { method: "DELETE" });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Delete request failed");
+  }
+  return true; // 204
 }
 
 /* ---------------- USERS (Auth) ---------------- */
@@ -147,9 +156,6 @@ export async function listAllUsers(): Promise<UserResponse[]> {
   return res.json();
 }
 
-/**
- * 获取所有用户（包括启用和未启用的）
- */
 export async function listAllUsersIncludingDisabled(): Promise<UserResponse[]> {
   try {
     const allUsers = await listAllUsers();
@@ -246,17 +252,6 @@ export async function deleteUser(id: number) {
   return del(`${BASE}${PATH.users}/${id}`);
 }
 
-/* ---------------- generic helpers ---------------- */
-
-async function del(url: string) {
-  const res = await fetch(url, { method: "DELETE" });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || "Delete request failed");
-  }
-  return true; // 204
-}
-
 /* ---------------- HEALTH DATA ---------------- */
 
 export async function listHealthDataByUser(
@@ -336,7 +331,7 @@ export async function deleteAssessment(id: number) {
   return del(`${BASE}${PATH.assessment}/${id}`);
 }
 
-/* -------- Optional aggregate (kept for compatibility) -------- */
+/* -------- Optional aggregate -------- */
 
 export async function aggregateAndTriggerAssessment(
   userId = USER_ID,
@@ -472,18 +467,46 @@ export async function deleteDietGuidance(id: number) {
   if (!res.ok) throw new Error("Failed to delete diet guidance");
   return true;
 }
-
 /* ---------------- MEDICATION GUIDANCE (OTC) ---------------- */
+
+
 
 export async function generateMedicationGuidance(
   userId: number,
   symptoms: string
 ): Promise<MedicationGuidance> {
   const url = `${BASE}/api/medication-guidance?userId=${encodeURIComponent(userId)}&symptoms=${encodeURIComponent(symptoms)}`;
-  const res = await fetch(url, { method: "POST" }); // 不需要手写 Content-Length
+  const res = await fetch(url, { method: "POST" });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(text || "Failed to generate medication guidance");
   }
   return res.json();
 }
+
+// ✅ 列表（按用户）
+export async function listMedicationGuidanceByUser(userId: number): Promise<MedicationGuidance[]> {
+  const res = await fetch(`${BASE}/api/medication-guidance/user/${userId}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load medication guidance list");
+  return res.json();
+}
+
+// ✅ 详情（按 guidanceId）
+export async function getMedicationGuidance(id: number): Promise<MedicationGuidance> {
+  const res = await fetch(`${BASE}/api/medication-guidance/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load medication guidance");
+  return res.json();
+}
+
+// ✅ 删除
+export async function deleteMedicationGuidance(id: number): Promise<boolean> {
+  const res = await fetch(`${BASE}/api/medication-guidance/${id}`, { method: "DELETE" });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Failed to delete medication guidance");
+  }
+  return true;
+}
+
+// ✅ 给组件用的别名（防止“没有导出的成员 getMedicationGuidanceById”）
+export { getMedicationGuidance as getMedicationGuidanceById };

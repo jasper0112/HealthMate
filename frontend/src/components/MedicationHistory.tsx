@@ -7,7 +7,7 @@ import {
 } from "@/lib/api";
 import type { MedicationGuidance } from "@/lib/types"; // ← 类型来自 types.ts
 import { getCurrentUser } from "@/lib/auth";
-import { exportMedicationCSV, exportMedicationPDF } from "@/lib/otc-export"; // ← 新建的导出工具
+import { exportMedicationCSV, exportMedicationPDF } from "@/lib/otc-exports"; // ← 新建的导出工具
 
 export default function MedicationHistory() {
   const auth = getCurrentUser();

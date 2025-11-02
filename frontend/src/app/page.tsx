@@ -1,6 +1,29 @@
+"use client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { getCurrentUser, AuthUser } from "@/lib/auth";
 
 export default function Home() {
+  const [user, setUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    setUser(getCurrentUser());
+    const handleStorage = () => setUser(getCurrentUser());
+    const handleFocus = () => setUser(getCurrentUser());
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", handleStorage);
+      window.addEventListener("focus", handleFocus);
+      document.addEventListener("visibilitychange", handleFocus);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("storage", handleStorage);
+        window.removeEventListener("focus", handleFocus);
+        document.removeEventListener("visibilitychange", handleFocus);
+      }
+    };
+  }, []);
+
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[24px] row-start-2 items-center text-center max-w-3xl">
@@ -9,24 +32,26 @@ export default function Home() {
           Your intelligent health companion: record health data, AI health assessment, intelligent triage, and personalized health plans.
         </p>
 
-        <div className="flex gap-12 items-center flex-col sm:flex-row mt-2">
-          <div>
-            <Link
-              href="/register"
-              className="rounded-full border border-solid border-transparent transition-all duration-200 flex items-center justify-center bg-black text-white hover:bg-[#383838] dark:bg-white dark:text-black dark:hover:bg-[#e5e5e5] font-medium text-sm sm:text-base h-11 sm:h-12 px-8 sm:px-10 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-100"
-            >
-              Register Now
-            </Link>
+        {!user && (
+          <div className="flex gap-12 items-center flex-col sm:flex-row mt-2">
+            <div>
+              <Link
+                href="/register"
+                className="rounded-full border border-solid border-transparent transition-all duration-200 flex items-center justify-center bg-black text-white hover:bg-[#383838] dark:bg-white dark:text-black dark:hover:bg-[#e5e5e5] font-medium text-sm sm:text-base h-11 sm:h-12 px-8 sm:px-10 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-100"
+              >
+                Register Now
+              </Link>
+            </div>
+            <div>
+              <Link
+                href="/login"
+                className="rounded-full border border-solid border-gray-300 dark:border-gray-600 transition-all duration-200 flex items-center justify-center bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 font-medium text-sm sm:text-base h-11 sm:h-12 px-8 sm:px-10 w-full sm:w-auto shadow-sm hover:shadow-md transform hover:scale-105 active:scale-100"
+              >
+                Login
+              </Link>
+            </div>
           </div>
-          <div>
-            <Link
-              href="/login"
-              className="rounded-full border border-solid border-gray-300 dark:border-gray-600 transition-all duration-200 flex items-center justify-center bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 font-medium text-sm sm:text-base h-11 sm:h-12 px-8 sm:px-10 w-full sm:w-auto shadow-sm hover:shadow-md transform hover:scale-105 active:scale-100"
-            >
-              Login
-            </Link>
-          </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 text-left w-full">
           <div className="rounded-xl border border-black/[.08] dark:border-white/[.145] p-5">
